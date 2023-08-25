@@ -8,45 +8,64 @@ pub struct SudokuGrid {
     pub candidates: [[HashSet<u8>; 9]; 9]
 }
 
+impl SudokuGrid {
+    fn format_cell(&self, row: usize, col: usize, sub_row: usize) -> String {
+        if self.grid[row][col] != 0 {
+            // If the grid value is set, display it in the center
+            if sub_row == 1 {
+                return format!("  {}  ", self.grid[row][col]);
+            } else {
+                return "     ".to_string();
+            }
+        } else {
+            // If the grid value is not set, display the candidates
+            let start = sub_row * 3 + 1;
+            let end = sub_row * 3 + 3;
+            let mut s = String::new();
+            for i in start..=end {
+                if self.candidates[row][col].contains(&(i as u8)) {
+                    s.push_str(&i.to_string());
+                } else {
+                    s.push('.');
+                }
+            }
+            return format!("{:<5}", s); // Left-align the candidates to ensure consistent width
+        }
+    }
+}
+
 impl fmt::Display for SudokuGrid {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        // Print column numbers at the top
+        writeln!(f, "    0     1     2   |  3     4     5  |  6     7     8  ")?;
+        writeln!(f, "--------------------+-----------------+-----------------")?;
+
         for row in 0..9 {
             for sub_row in 0..3 {
+                // Print row number at the start of each new cell row
+                if sub_row == 1 {
+                    write!(f, "{} |", row)?;
+                } else {
+                    write!(f, "  |")?;
+                }
+
                 for col in 0..9 {
-                    if sub_row == 1 {
-                        // Write the grid value
-                        write!(f, " {} ", self.grid[row][col])?;
-                    } else {
-                        // Write an empty placeholder for the grid value
-                        write!(f, " . ")?;
-                    }
-                    
-                    for i in (sub_row * 3 + 1)..=(sub_row * 3 + 3) {
-                        if self.candidates[row][col].contains(&i) {
-                            write!(f, "{}", i)?;
-                        } else {
-                            write!(f, ".")?;
-                        }
-                    }
-                    
+                    write!(f, "{}", self.format_cell(row, col, sub_row))?;
                     if col % 3 == 2 && col != 8 {
-                        write!(f, " |  ")?;
+                        write!(f, "|")?;
                     } else {
-                        write!(f, "   ")?; // Space between individual cells
+                        write!(f, " ")?; // Space between individual cells
                     }
                 }
                 writeln!(f)?;
             }
             if row % 3 == 2 && row != 8 {
-                writeln!(f, "-----------------------+-----------------------+-----------------------")?;
+                writeln!(f, "--------------------+-----------------+----------------")?;
             }
-            writeln!(f)?; // Extra newline after the entire group of cell data
         }
         Ok(())
     }
 }
-
-
 
 
 impl SudokuGrid {
@@ -290,9 +309,10 @@ impl SudokuGrid {
             .join("")
     }
 
-    pub fn has_unique_solution(&mut self) -> bool {
+    pub fn has_unique_solution(&self) -> bool {
         let mut solutions = 0;
-        self.check_solutions(&mut solutions);
+        let mut a = self.clone();
+        a.check_solutions(&mut solutions);
         solutions == 1
     }
 

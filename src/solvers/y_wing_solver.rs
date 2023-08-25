@@ -1,6 +1,4 @@
-use core::num;
 use std::collections::HashSet;
-use std::hash::Hash;
 
 use super::sudoku_solver::*;
 use super::super::sudoku_grid::*;
@@ -35,27 +33,40 @@ impl SudokuSolveMethod for YWingSolver {
                 else if wings[0].1 == wings[1].1 { continue; }
                 else if wings[0].0/3 == wings[1].0/3 && wings[0].1/3 == wings[1].1/3 { continue; }
 
-                // The wings also must have 3 total distinct candidates where Wings share 1
-                // TODO(JBadges): This if statement is so gross, there has to be a better way to do this
-                if sgrid.candidates[wings[0].0][wings[0].1]
-                    .union(&sgrid.candidates[wings[1].0][wings[1].1])
-                    .cloned()
-                    .collect::<HashSet<u8>>()
-                    .union(&sgrid.candidates[hinge.0][hinge.1])
-                    .collect::<Vec<_>>()
-                    .len() != 3 {
-                    continue;
-                }
+                // Extract the candidates for the hinge and the two wings
+                let hinge_candidates = &sgrid.candidates[hinge.0][hinge.1];
+                let wing1_candidates = &sgrid.candidates[wings[0].0][wings[0].1];
+                let wing2_candidates = &sgrid.candidates[wings[1].0][wings[1].1];
+                
+                // Its possible that even though these were all generated as len==2
+                // that in a previous pass the candidates were reduced to 1
+                if hinge_candidates.len() != 2 || 
+                    wing1_candidates.len() != 2 || 
+                    wing2_candidates.len() != 2  { continue; }
 
-                let candidate_intersection: Vec<_> = sgrid.candidates[wings[0].0][wings[0].1]
-                    .intersection(&sgrid.candidates[wings[1].0][wings[1].1])
-                    .cloned()
-                    .collect();
+                // Extract the two candidates from the hinge
+                let hinge_values: Vec<_> = hinge_candidates.iter().cloned().collect();
+                let (a, b) = (hinge_values[0], hinge_values[1]);
 
-                if candidate_intersection.len() != 1 {
-                    continue;
-                }
-                let num_to_remove = candidate_intersection[0];
+                // Check if wing1 has A and another candidate (not B)
+                let c_from_wing1 = if wing1_candidates.contains(&a) {
+                    wing1_candidates.iter().find(|&&x| x != a).cloned()
+                } else {
+                    None
+                };
+
+                // Check if wing2 has B and another candidate (not A)
+                let c_from_wing2 = if wing2_candidates.contains(&b) {
+                    wing2_candidates.iter().find(|&&x| x != b).cloned()
+                } else {
+                    None
+                };
+
+                // Check if both wings have identified the same C and it's not None
+                let num_to_remove = match (c_from_wing1, c_from_wing2) {
+                    (Some(c1), Some(c2)) if c1 == c2 => c1,
+                    _ => continue,
+                };
 
                 // We can remove the shared candidate between the wings
                 // in all cells where the wings intersect

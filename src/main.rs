@@ -34,6 +34,6 @@ fn main() {
             }
         }
     }
-    println!("Unable to apply more move with final board state:");
+    println!("Unable to apply more solvers. Final board state:");
     println!("{}", grid);
 }
