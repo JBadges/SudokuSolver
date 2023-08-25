@@ -1,7 +1,6 @@
 extern crate sudoku_generator;
 
 use sudoku_generator::sudoku_grid::*;
-use sudoku_generator::solvers::sudoku_solver::*;
 
 #[test]
 fn test_backtrack_fill() {
