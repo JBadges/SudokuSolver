@@ -70,23 +70,8 @@ impl SudokuSolveMethod for YWingSolver {
 
                 // We can remove the shared candidate between the wings
                 // in all cells where the wings intersect
-                fn generate_cells_seen_from_cord(cord: (usize, usize)) -> HashSet<(usize, usize)> {
-                    let (row, col) = cord;
-                    let mut cells = HashSet::new();
-                    for i in 0..9 {
-                        cells.insert((i, col));
-                        cells.insert((row, i));
-                    }
-                    for box_row in 3*(row/3)..3*(row/3)+3 {
-                        for box_col in 3*(col/3)..3*(col/3)+3 {
-                            cells.insert((box_row, box_col));
-                        }
-                    }
-                    cells
-                }
-
-                let cells_seen_from_wing1 = generate_cells_seen_from_cord(**wings[0]);
-                let cells_seen_from_wing2 = generate_cells_seen_from_cord(**wings[1]);
+                let cells_seen_from_wing1 = SudokuGrid::generate_cells_seen_from_cord(**wings[0]);
+                let cells_seen_from_wing2 = SudokuGrid::generate_cells_seen_from_cord(**wings[1]);
 
                 let mut first_print = true;
 

@@ -1,6 +1,7 @@
 use std::fmt;
 use rand::seq::SliceRandom;
 use std::collections::HashSet;
+use super::adjacency_graph::AdjacencyGraph;
 
 #[derive(PartialEq, Clone)]
 pub struct SudokuGrid {
@@ -38,7 +39,7 @@ impl fmt::Display for SudokuGrid {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         // Print column numbers at the top
         writeln!(f, "    0     1     2   |  3     4     5  |  6     7     8  ")?;
-        writeln!(f, "--------------------+-----------------+-----------------")?;
+        writeln!(f, "--------------------+-----------------+----------------")?;
 
         for row in 0..9 {
             for sub_row in 0..3 {
@@ -346,6 +347,73 @@ impl SudokuGrid {
                 }
             }
         }
+    }
+
+    pub fn generate_cells_seen_from_cord(cord: (usize, usize)) -> HashSet<(usize, usize)> {
+        let (row, col) = cord;
+        let mut cells = HashSet::new();
+        for i in 0..9 {
+            cells.insert((i, col));
+            cells.insert((row, i));
+        }
+        for box_row in 3*(row/3)..3*(row/3)+3 {
+            for box_col in 3*(col/3)..3*(col/3)+3 {
+                cells.insert((box_row, box_col));
+            }
+        }
+        cells
+    }
+
+    pub fn cells_see_each_other(corda: (usize, usize), cordb: (usize, usize)) -> bool {
+        corda.0 == cordb.0 || corda.1 == cordb.1 || (corda.0 / 3 == cordb.0 / 3 && corda.1 / 3 == cordb.1/3)
+    }
+
+    pub fn get_conjugate_pairs(&self, num: u8) -> AdjacencyGraph {
+        let mut graph = AdjacencyGraph::new();
+
+        // Box
+        for box_row in (0..9).step_by(3) {
+            for box_col in (0..9).step_by(3) {
+                let mut cords = Vec::new();
+                for row in box_row..box_row+3 {
+                    for col in box_col..box_col+3 {
+                        if self.candidates[row][col].contains(&num) {
+                            cords.push((row, col));
+                        }
+                    }
+                }
+                if cords.len() == 2 {
+                    graph.add_edge(cords[0], cords[1]);
+                }
+            }
+        }
+
+        // Col
+        for col in 0..9 {
+            let mut cords = Vec::new();
+            for row in 0..9 {
+                if self.candidates[row][col].contains(&num) {
+                    cords.push((row, col));
+                }
+            }
+            if cords.len() == 2 {
+                graph.add_edge(cords[0], cords[1]);
+            }
+        }
+        // Row
+        for row in 0..9 {
+            let mut cords = Vec::new();
+            for col in 0..9 {
+                if self.candidates[row][col].contains(&num) {
+                    cords.push((row, col));
+                }
+            }
+            if cords.len() == 2 {
+                graph.add_edge(cords[0], cords[1]);
+            }
+        }
+
+        return graph;
     }
 
 }
