@@ -8,11 +8,12 @@ use sudoku_generator::solvers::x_wing_solver::XWingSolver;
 use sudoku_generator::solvers::singles_chains_solver::SinglesChainsSolver;
 use sudoku_generator::solvers::y_wing_solver::YWingSolver;
 use sudoku_generator::solvers::swordfish_solver::SwordfishSolver;
+use sudoku_generator::solvers::jellyfish_solver::JellyfishSolver;
 
 
 fn main() {
-    let mut grid = SudokuGrid::create_sudoku_puzzle(100);
-    // let mut grid = SudokuGrid::from_string("050030602642895317037020800023504700406000520571962483214000900760109234300240170");
+    // let mut grid = SudokuGrid::create_sudoku_puzzle(100);
+    let mut grid = SudokuGrid::from_string("024090008800402900719000240075804300240900587038507604082000059007209003490050000");
     println!("{}", grid);
     println!("{}", grid.to_number_string());
     println!("Generated puzzle with {} blanks", grid.grid.iter().flatten().filter(|&&x| x == 0).count());
@@ -27,6 +28,7 @@ fn main() {
     solvers.push(Box::new(SinglesChainsSolver));
     solvers.push(Box::new(YWingSolver));
     solvers.push(Box::new(SwordfishSolver));
+    solvers.push(Box::new(JellyfishSolver));
 
     let mut applied = true;
     while applied {
