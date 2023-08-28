@@ -13,7 +13,7 @@ use sudoku_generator::solvers::jellyfish_solver::JellyfishSolver;
 
 fn main() {
     // let mut grid = SudokuGrid::create_sudoku_puzzle(100);
-    let mut grid = SudokuGrid::from_string("024090008800402900719000240075804300240900587038507604082000059007209003490050000");
+    let mut grid = SudokuGrid::from_string("950280000200000060008070002009000004020090600300500010000003000007000005093007480");
     println!("{}", grid);
     println!("{}", grid.to_number_string());
     println!("Generated puzzle with {} blanks", grid.grid.iter().flatten().filter(|&&x| x == 0).count());
@@ -35,6 +35,7 @@ fn main() {
         for solver in &solvers {
             applied = solver.apply(&mut grid);
             if applied {
+                println!("{}", grid.has_unique_solution());
                 // println!("{}", grid);
                 break;
             }
