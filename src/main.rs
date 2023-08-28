@@ -35,8 +35,6 @@ fn main() {
         for solver in &solvers {
             applied = solver.apply(&mut grid);
             if applied {
-                println!("{}", grid.has_unique_solution());
-                // println!("{}", grid);
                 break;
             }
         }

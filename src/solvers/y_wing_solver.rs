@@ -85,10 +85,6 @@ impl SudokuSolveMethod for YWingSolver {
 
                 assert!(wing2_candidates.contains(&b));
                 assert!(wing2_candidates.contains(&c));
-                
-
-                println!("{},{},{}", a, b, c);
-                println!("{}", sgrid);
 
                 // We can remove the shared candidate between the wings
                 // in all cells where the wings intersect
@@ -112,7 +108,6 @@ impl SudokuSolveMethod for YWingSolver {
                         applied = true;
                     }
                 }
-                println!("{}", sgrid.has_unique_solution());
             }
         }
 
