@@ -23,6 +23,7 @@ fn test_has_unique_solution_3() {
 }
 
 #[test]
-fn test_has_unique_solution_4() {
-    assert!(SudokuGrid::from_string("300052000250300010004607523093200805570000030408035060005408300030506084840023056").has_unique_solution());
+fn test_3dmedusa_rule1() {
+    // TODO(JBadges): Solver testing framework
+    assert!(SudokuGrid::from_string("093824560085600002206075008321769845000258300578040296850016723007082650002507180").has_unique_solution());
 }

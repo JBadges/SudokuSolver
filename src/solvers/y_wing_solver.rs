@@ -1,4 +1,3 @@
-use core::num;
 use std::collections::HashSet;
 
 use super::sudoku_solver::*;

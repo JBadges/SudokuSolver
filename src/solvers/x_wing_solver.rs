@@ -8,90 +8,64 @@ pub struct XWingSolver;
 
 impl SudokuSolveMethod for XWingSolver {
     fn apply(&self, sgrid: &mut SudokuGrid) -> bool {
-        let mut applied = false;
-
         // X-wing, any given number if it only appears in two cells in the same 
         // [row|col] and in matching [col|row] in another [row|col] then all
         // candidates of the same value can be removed from the row & col, except for those cells
 
-        // X-wing rows
-        for num in 1..=9 {
-            let mut placement_in_rows: [HashSet<usize>; 9] = Default::default();
-            for row in placement_in_rows.iter_mut() {
-                *row = HashSet::new();
-            }
-            for row in 0..9 {
-                // For each row store where the digits can go
+        self.apply_x_wing_on_axis(sgrid, GridAxis::Row) | self.apply_x_wing_on_axis(sgrid, GridAxis::Col)
+    }
+}
 
-                for col in 0..9 {
+impl XWingSolver {
+    // Applies the X-wing rule on either rows or columns based on the 'axis' argument
+    fn apply_x_wing_on_axis(&self, sgrid: &mut SudokuGrid, axis: GridAxis) -> bool {
+        let mut changes_made = false;
+        
+        for num in 1..=9 {
+            let mut candidate_positions: [HashSet<usize>; 9] = Default::default();
+            
+            for primary in 0..9 {
+                for secondary in 0..9 {
+                    let (row, col) = match &axis {
+                        GridAxis::Row => (primary, secondary),
+                        GridAxis::Col => (secondary, primary),
+                        _ => panic!("Box axis does not make sense for xwing")
+                    };
+                    
                     if sgrid.candidates[row][col].len() > 1 && sgrid.candidates[row][col].contains(&num) {
-                        placement_in_rows[row].insert(col);
+                        candidate_positions[primary].insert(secondary);
                     }
                 }
             }
 
-            // For all combinations of placements with 2 entries see if they both line up
-            for pair in placement_in_rows.iter().enumerate().combinations(2) {
-                let (row1, cols1) = pair[0];
-                let (row2, cols2) = pair[1];
+            for pair in candidate_positions.iter().enumerate().combinations(2) {
+                // Positions are the two locations of the digit within an axis
+                let (index1, positions1) = pair[0];
+                let (index2, positions2) = pair[1];
 
-                if cols1.len() != 2 || cols2.len() != 2 { continue; }
-                if cols1 != cols2 { continue; }
+                // Two two positions of any given candidate must only appear twice in any Axis
+                if positions1.len() != 2 || positions1 != positions2 { continue; }
 
-                // X-Wing
-                // Remove candidate columns
-                for col in cols1.iter() {
-                    for row in 0..9 {
-                        if row != row1 && row != row2 {
-                            if sgrid.candidates[row][*col].remove(&num) {
-                                println!("Solver [XWingSolver:Row] removed value {} from candidate location ({}, {})", num, row, col);
-                                applied = true;
+                for &pos in positions1.iter() {
+                    for primary in 0..9 {
+                        if primary != index1 && primary != index2 {
+                            let (row, col) = match axis {
+                                GridAxis::Row => (primary, pos),
+                                GridAxis::Col => (pos, primary),
+                                _ => panic!("Box axis does not make sense for xwing")
+                            };
+
+                            if sgrid.candidates[row][col].remove(&num) {
+                                println!("Removed value {} from candidate location ({}, {})", num, row, col);
+                                changes_made = true;
                             }
                         }
                     }
                 }
             }
         }
-
-        // X-wing columns
-    for num in 1..=9 {
-        let mut placement_in_cols: [HashSet<usize>; 9] = Default::default();
-        for col in placement_in_cols.iter_mut() {
-            *col = HashSet::new();
-        }
-        for col in 0..9 {
-            // For each column store where the digits can go
-            for row in 0..9 {
-                if sgrid.candidates[row][col].len() > 1 && sgrid.candidates[row][col].contains(&num) {
-                    placement_in_cols[col].insert(row);
-                }
-            }
-        }
-
-        // For all combinations of placements with 2 entries see if they both line up
-        for pair in placement_in_cols.iter().enumerate().combinations(2) {
-            let (col1, rows1) = pair[0];
-            let (col2, rows2) = pair[1];
-
-            if rows1.len() != 2 || rows2.len() != 2 { continue; }
-            if rows1 != rows2 { continue; }
-
-            // X-Wing
-            // Remove candidate rows
-            for row in rows1.iter() {
-                for col in 0..9 {
-                    if col != col1 && col != col2 {
-                        if sgrid.candidates[*row][col].remove(&num) {
-                            println!("Solver [XWingSolver:Col] removed value {} from candidate location ({}, {})", num, *row, col);
-                            applied = true;
-                        }
-                    }
-                }
-            }
-        }
+        
+        changes_made
     }
 
-
-        applied
-    }
 }

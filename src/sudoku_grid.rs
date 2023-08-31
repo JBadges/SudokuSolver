@@ -9,6 +9,12 @@ pub struct SudokuGrid {
     pub candidates: [[HashSet<u8>; 9]; 9]
 }
 
+pub enum GridAxis {
+    Row,
+    Col,
+    Box
+}
+
 impl SudokuGrid {
     fn format_cell(&self, row: usize, col: usize, sub_row: usize) -> String {
         if self.grid[row][col] != 0 {

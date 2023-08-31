@@ -1,7 +1,6 @@
 use std::collections::HashMap;
 use std::collections::HashSet;
 use std::collections::VecDeque;
-use std::hash::Hash;
 
 pub struct AdjacencyGraph {
     edges: HashMap<(usize, usize), HashSet<(usize, usize)>>,
