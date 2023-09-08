@@ -3,13 +3,15 @@ use std::collections::HashSet;
 use super::super::sudoku_grid::SudokuGrid;
 use super::sudoku_solver::SudokuSolveMethod;
 use super::super::adjacency_graph::{AdjacencyGraph, BiColor};
+use crate::sudoku_latex_builder::SudokuLatexBuilder;
 
 use itertools::Itertools;
 
 pub struct SinglesChainsSolver;
 
 impl SudokuSolveMethod for SinglesChainsSolver {
-    fn apply(&self, sgrid: &mut SudokuGrid) -> bool {
+    fn apply(&self, sgrid: &mut SudokuGrid, visualizer: &mut SudokuLatexBuilder) -> bool {
+
         let mut applied = false;
 
         for num in 1..=9 {

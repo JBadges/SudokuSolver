@@ -1,103 +1,98 @@
+use crate::sudoku_visualizer_builder::Colors;
+
 use super::sudoku_solver::*;
 use super::super::sudoku_grid::*;
 
-use std::collections::HashSet;
+use std::collections::HashMap;
 use itertools::Itertools;
 
 pub struct HiddenCandidatesSolver;
 
+// Hidden candidates are like naked candidates except there can be extra
+// candidates inside its cells. If two numbers can only go in two cells 
+// it does not matter if other numbers exist as those two numbers MUST 
+// go in either of those cells
 impl SudokuSolveMethod for HiddenCandidatesSolver {
-    fn apply(&self, sgrid: &mut SudokuGrid) -> bool {
-        let mut applied = false;
+    fn apply(&self, sgrid: &SudokuGrid) -> Option<SolverResult> {
 
-        fn determine_hidden_candidates(sgrid: &mut SudokuGrid, cells: &[(usize, usize)], removal: Vec<(usize, usize)>) -> bool {
-            let mut applied = false;
-            let mut candidates_set: HashSet<u8> = HashSet::new();
-            for &(row, col) in cells {
+        for combs in 2..=4 {
+            for unit_type in [UnitType::Box, UnitType::Row, UnitType::Col] {
+                if let Some(ret) = self.check_units(sgrid, combs, unit_type) { return Some(ret) };
+            }
+        }
+
+        None
+    }
+}
+impl HiddenCandidatesSolver {
+    fn check_units(&self, sgrid: &SudokuGrid, combs: usize, unit_type: UnitType) -> Option<SolverResult> {
+        for unit in SudokuGrid::get_all_units_from_unit_type(unit_type) {
+            let unsolved_cells_in_unit: Vec<(usize, usize)> = unit.iter().filter(|&&(row, col)| sgrid.grid[row][col] == 0).cloned().collect();
+            let mut candidate_appearance_count: HashMap<usize, i32> = HashMap::new();
+            for &(row, col) in &unsolved_cells_in_unit {
                 for &candidate in &sgrid.candidates[row][col] {
-                    candidates_set.insert(candidate);
+                    *(candidate_appearance_count.entry(candidate).or_insert(0)) += 1;
                 }
             }
-    'outer: for candidate_comb in candidates_set.iter().combinations(cells.len()) {
-                for &(row, col) in &removal {
-                    if cells.contains(&(row, col)) {
-                        continue;
-                    }
-                    for val in &candidate_comb {
-                        if sgrid.candidates[row][col].contains(val) {
-                            continue 'outer;
+
+            // If a candidate appears more times than the combinations of cells we are checking for, it can't be a hidden candidate.
+            let valid_candidates: Vec<usize> = candidate_appearance_count.keys().filter(|&x| candidate_appearance_count[x] <= combs as i32).cloned().collect();
+            // If we have less candidates than the number of cells to check we don't have hidden candidates
+            if valid_candidates.len() < combs { continue; }
+
+            for candidates_combination in valid_candidates.iter().cloned().combinations(combs) {
+                let has_candidate_from_candidates_combination = |&&(row, col): &&(usize, usize)| {
+                    sgrid.candidates[row][col]
+                        .iter()
+                        .any(|candidate| candidates_combination.contains(candidate))
+                };
+                
+                let hidden_candidate_candidate_cells: Vec<_> = unsolved_cells_in_unit
+                    .iter()
+                    .filter(has_candidate_from_candidates_combination)
+                    .cloned()
+                    .collect();
+
+                // We need to have exactly combs number of cells which meet these requirements or
+                // this isnt a hidden candidate.
+                if hidden_candidate_candidate_cells.len() != combs { continue; }
+
+                let mut reductions = Vec::new();
+                let mut visualizer_updates = Vec::new();
+
+                visualizer_updates.push(VisualizerUpdate::SetTitle(
+                    format!("Hidden Candidates {}", match combs {
+                    2 => "Pairs",
+                    3 => "Triples",
+                    4 => "Quads",
+                    _ => "Unkown",
+                    })
+                ));
+
+                for &(row, col) in &unit {
+                    visualizer_updates.push(VisualizerUpdate::ColorCell(row, col, Colors::CELL_USED_TO_DETERMINE_SOLUTION));
+                }
+
+                for (row, col) in hidden_candidate_candidate_cells {
+                    for num in 1..=9 {
+                        if candidates_combination.contains(&num) { continue; }
+
+                        if sgrid.candidates[row][col].contains(&num) {
+                            for &val in &candidates_combination {
+                                if sgrid.candidates[row][col].contains(&val) {
+                                    visualizer_updates.push(VisualizerUpdate::HighlightCandidate(row, col, val, Colors::DIGIT_USED_TO_DETERMINE_SOLUTION));
+                                }
+                            }
+                            visualizer_updates.push(VisualizerUpdate::ColorCell(row, col, Colors::CELL_MARKED_FOR_CANDIDATE_REMOVEAL));
+                            visualizer_updates.push(VisualizerUpdate::HighlightCandidate(row, col, num, Colors::CANDIDATE_MARKED_FOR_REMOVAL));
+                            reductions.push(SolverAction::CandidateReduction(row, col, num));
                         }
                     }
                 }
-                let candidate_comb_u8: HashSet<u8> = candidate_comb.iter().map(|&&x| x).collect();
-                let mut changes_made = false;
-                let mut removals: Vec<((usize, usize), Vec<u8>)> = Vec::new();
-
-                for (i, j) in cells.iter() {
-                    let cell_candidates = &mut sgrid.candidates[*i][*j];
-                    let original_candidates: HashSet<u8> = cell_candidates.clone();
-                    cell_candidates.retain(|&x| candidate_comb_u8.contains(&x));
-
-                    if original_candidates.len() != cell_candidates.len() {
-                        applied = true;
-                        changes_made = true;
-                        let removed_values: Vec<u8> = original_candidates.difference(&cell_candidates).cloned().collect();
-                        removals.push(((*i, *j), removed_values));
-                    }
-                }
-
-                if changes_made {
-                    println!("Solver [HiddenCandidatesSolver] found candidate set {:?} at ({:?})", candidate_comb, cells);
-                    for ((i, j), removed_values) in removals {
-                        println!("Removed values {:?} from candidate location ({}, {})", removed_values, i, j);
-                    }
-                }
-
-            }
-            applied
-        }
-
-        // Box
-        for i in (0..9).step_by(3) {
-            for j in (0..9).step_by(3)  {
-                let cells: Vec<(usize, usize)> = (i..i+3)
-                    .flat_map(|i| (j..j+3).map(move |j| (i, j)))
-                    .filter(|&(row, col)| sgrid.grid[row][col] == 0)
-                    .collect();
-
-                for combs in 2..=4 {
-                    for comb in cells.iter().combinations(combs) {
-                        applied |= determine_hidden_candidates(sgrid, &comb.into_iter().map(|&x| x).collect::<Vec<_>>()[..], cells.clone());
-                    }
-                }
+                if !reductions.is_empty() { return Some((reductions, visualizer_updates)); }
             }
         }
 
-        // Row
-        for row in 0..9 {
-            let cells: Vec<(usize, usize)> = (0..9).map(|col| (row, col))
-                .filter(|&(row, col)| sgrid.grid[row][col] == 0)
-                .collect();
-
-            for combs in 2..=4 {
-                for comb in cells.iter().combinations(combs) {
-                    applied |= determine_hidden_candidates(sgrid, &comb.into_iter().map(|&x| x).collect::<Vec<_>>()[..], cells.clone());
-                }
-            }
-        }
-
-        // Column
-        for col in 0..9 {
-            let cells: Vec<(usize, usize)> = (0..9).map(|row| (row, col))
-                .filter(|&(row, col)| sgrid.grid[row][col] == 0)
-                .collect();
-            for combs in 2..=4 {
-                for comb in cells.iter().combinations(combs) {
-                    applied |= determine_hidden_candidates(sgrid, &comb.into_iter().map(|&x| x).collect::<Vec<_>>()[..], cells.clone());
-                }
-            }
-        }
-
-        applied
+        Default::default()
     }
 }

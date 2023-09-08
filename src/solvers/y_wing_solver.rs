@@ -3,12 +3,14 @@ use std::collections::HashSet;
 use super::sudoku_solver::*;
 use super::super::sudoku_grid::*;
 
+use crate::sudoku_latex_builder::SudokuLatexBuilder;
 use itertools::Itertools;
 
 pub struct YWingSolver;
 
 impl SudokuSolveMethod for YWingSolver {
-    fn apply(&self, sgrid: &mut SudokuGrid) -> bool {
+    fn apply(&self, sgrid: &mut SudokuGrid, visualizer: &mut SudokuLatexBuilder) -> bool {
+
         let mut applied = false;
 
         // Find all possible y-wing hinges and wings

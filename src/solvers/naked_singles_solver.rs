@@ -1,67 +1,53 @@
+use crate::sudoku_visualizer_builder::Colors;
+
 use super::sudoku_solver::*;
 use super::super::sudoku_grid::*;
 
 pub struct NakedSinglesSolver;
 
+// A Naked Singles Solver finds any unit (row, col, box) in which
+// there exists a digit that can only be placed in one of the cells
 impl SudokuSolveMethod for NakedSinglesSolver {
-    fn apply(&self, sgrid: &mut SudokuGrid) -> bool {
-        let mut applied = false;
-        // Check for hidden singles in rows and columns
-        for i in 0..9 {
-            for j in 0..9 {
-                if sgrid.grid[i][j] == 0 && sgrid.candidates[i][j].len() == 1 {
-                    if let Some(digit) = sgrid.candidates[i][j].iter().next() {
-                        println!("Solver [NakedSinglesSolver] found solution {} at ({},{})", digit, i, j);
-                        assert!(sgrid.add_digit(*digit, i, j));
-                        applied = true
-                    }
-                }
+    fn apply(&self, sgrid: &SudokuGrid) -> Option<SolverResult> {
+
+        for unit_type in [UnitType::Box, UnitType::Row, UnitType::Col] {
+            for unit in SudokuGrid::get_all_units_from_unit_type(unit_type) {
+                if let Some(result) = self.find_hidden_single(sgrid, &unit) { return Some(result); }
             }
         }
 
-        fn find_last_remaining(sgrid: &mut SudokuGrid, vals: Vec<(usize, usize)>) -> bool {
-            let mut applied = false;
-            let mut count: Vec<i32> = vec![0; 10];
-            let mut last_pos = vec![(0, 0); 10];
-            
-            for (row, col) in vals {
-                if sgrid.grid[row][col] == 0 {
-                    for &candidate in &sgrid.candidates[row][col] {
-                        count[candidate as usize] += 1;
-                        last_pos[candidate as usize] = (row, col);
-                    }
-                }
-            }
-    
-            for num in 1..=9 {
-                if count[num] == 1 {
-                    let (row, col) = last_pos[num];
-                    println!("Solver [NakedSinglesSolver] found solution {} at ({},{})", num, row, col);
-                    assert!(sgrid.add_digit(num as u8, row, col));
-                    applied = true
-                }
-            }
+        None
+    }
+}
 
-            return applied;
-        }
+impl NakedSinglesSolver {
+    fn find_hidden_single(&self, sgrid: &SudokuGrid, vals: &Vec<(usize, usize)>) -> Option<SolverResult> {
+        let mut visualizer_updates = Vec::new();
+        let mut reductions = Vec::new();
 
-        // Check for last remaining cell in a box
-        for i in (0..9).step_by(3) {
-            for j in (0..9).step_by(3)  {
-                applied |= find_last_remaining(sgrid, (i..i+3).flat_map(|i| (j..j+3).map(move |j| (i, j))).collect());
+        visualizer_updates.push(VisualizerUpdate::SetTitle("Naked Singles".to_string()));
+
+        let mut candidate_count: Vec<i32> = vec![0; 10];
+        let mut cordinate_of_candidate = vec![(0, 0); 10];
+        
+        // Only keep values that are unsolved.
+        for &(row, col) in vals.iter().filter(|&&(row, col)| sgrid.grid[row][col] == 0) {
+            for &candidate in &sgrid.candidates[row][col] {
+                candidate_count[candidate] += 1;
+                cordinate_of_candidate[candidate] = (row, col);
+                visualizer_updates.push(VisualizerUpdate::ColorCell(row, col, Colors::CELL_USED_TO_DETERMINE_SOLUTION));
             }
         }
 
-        // Check for last remaining cell in a row
-        for row in 0..9 {
-            applied |= find_last_remaining(sgrid, (0..9).map(|col| (row, col)).collect());
+        for num in 1..=9 {
+            if candidate_count[num] == 1 {
+                let (row, col) = cordinate_of_candidate[num];
+                visualizer_updates.push(VisualizerUpdate::ColorDigit(row, col, Colors::SOLVED_DIGIT));
+                reductions.push(SolverAction::DigitSolve(row, col, num));
+                return Some((reductions, visualizer_updates));
+            }
         }
 
-        // Check for last remaining cell in a column
-        for col in 0..9 {
-            applied |= find_last_remaining(sgrid, (0..9).map(|row| (row, col)).collect());
-        }
-
-        return applied;
+        None
     }
 }

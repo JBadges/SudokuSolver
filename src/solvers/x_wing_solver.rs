@@ -4,10 +4,12 @@ use super::super::sudoku_grid::*;
 use std::collections::HashSet;
 use itertools::Itertools;
 
+use crate::sudoku_latex_builder::SudokuLatexBuilder;
 pub struct XWingSolver;
 
 impl SudokuSolveMethod for XWingSolver {
-    fn apply(&self, sgrid: &mut SudokuGrid) -> bool {
+    fn apply(&self, sgrid: &mut SudokuGrid, visualizer: &mut SudokuLatexBuilder) -> bool {
+
         // X-wing, any given number if it only appears in two cells in the same 
         // [row|col] and in matching [col|row] in another [row|col] then all
         // candidates of the same value can be removed from the row & col, except for those cells

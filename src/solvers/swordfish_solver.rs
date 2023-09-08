@@ -3,15 +3,17 @@ use super::super::sudoku_grid::*;
 
 use std::collections::HashSet;
 use itertools::Itertools;
+use crate::sudoku_latex_builder::SudokuLatexBuilder;
 
 pub struct SwordfishSolver;
 
 impl SudokuSolveMethod for SwordfishSolver {
-    fn apply(&self, sgrid: &mut SudokuGrid) -> bool {
+    fn apply(&self, sgrid: &mut SudokuGrid, visualizer: &mut SudokuLatexBuilder) -> bool {
+
         let mut applied = false;
 
         for num in 1..=9 {
-            fn swordfish_for_direction(sgrid: &mut SudokuGrid, num: u8, is_rowwise: bool) -> bool {
+            fn swordfish_for_direction(sgrid: &mut SudokuGrid, num: usize, is_rowwise: bool) -> bool {
                 let mut applied = false;
                 let mut candidates: [HashSet<usize>; 9] = Default::default();
                 

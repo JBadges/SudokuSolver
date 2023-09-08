@@ -27,3 +27,16 @@ fn test_3dmedusa_rule1() {
     // TODO(JBadges): Solver testing framework
     assert!(SudokuGrid::from_string("093824560085600002206075008321769845000258300578040296850016723007082650002507180").has_unique_solution());
 }
+
+#[test]
+fn test_cells_contained_in_only_box() {
+    let contained = SudokuGrid::get_contained_units(&vec![(1,0),(1,1),(2,0),(2,1)]);
+    assert!(contained.len() == 1);
+    assert!(contained[0] == UnitType::Box);
+}
+
+#[test]
+fn test_cells_contained_empty() {
+    let contained = SudokuGrid::get_contained_units(&vec![]);
+    assert!(contained.len() == 0);
+}

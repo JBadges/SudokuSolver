@@ -5,11 +5,11 @@ use super::adjacency_graph::AdjacencyGraph;
 
 #[derive(PartialEq, Clone)]
 pub struct SudokuGrid {
-    pub grid: [[u8; 9]; 9],
-    pub candidates: [[HashSet<u8>; 9]; 9]
+    pub grid: [[usize; 9]; 9],
+    pub candidates: [[HashSet<usize>; 9]; 9]
 }
-
-pub enum GridAxis {
+#[derive(PartialEq)]
+pub enum UnitType {
     Row,
     Col,
     Box
@@ -30,7 +30,7 @@ impl SudokuGrid {
             let end = sub_row * 3 + 3;
             let mut s = String::new();
             for i in start..=end {
-                if self.candidates[row][col].contains(&(i as u8)) {
+                if self.candidates[row][col].contains(&(i as usize)) {
                     s.push_str(&i.to_string());
                 } else {
                     s.push('.');
@@ -78,8 +78,8 @@ impl fmt::Display for SudokuGrid {
 impl SudokuGrid {
     pub fn new() -> Self {
         let initial_grid = [[0; 9]; 9];
-        let all_nums: HashSet<u8> = (1..=9).collect();
-        let mut initial_candidates: [[HashSet<u8>; 9]; 9] = Default::default();
+        let all_nums: HashSet<usize> = (1..=9).collect();
+        let mut initial_candidates: [[HashSet<usize>; 9]; 9] = Default::default();
 
         for i in 0..9 {
             for j in 0..9 {
@@ -97,14 +97,14 @@ impl SudokuGrid {
         // Ensure the string has the correct length
         assert_eq!(init_str.len(), 81, "Input string must have exactly 81 characters.");
 
-        let mut grid = [[0 as u8; 9]; 9];
-        let candidates: [[HashSet<u8>; 9]; 9] = Default::default();
+        let mut grid = [[0 as usize; 9]; 9];
+        let candidates: [[HashSet<usize>; 9]; 9] = Default::default();
 
         for (i, ch) in init_str.chars().enumerate() {
             let row = i / 9;
             let col = i % 9;
             match ch.to_digit(10) {
-                Some(val) => grid[row][col] = val as u8,
+                Some(val) => grid[row][col] = val as usize,
                 None => panic!("Invalid character in input string."),
             };
         }
@@ -117,7 +117,7 @@ impl SudokuGrid {
         ret
     }
 
-    pub fn add_digit(&mut self, digit: u8, row: usize, col: usize) -> bool {
+    pub fn add_digit(&mut self, digit: usize, row: usize, col: usize) -> bool {
         let temp_candidates = self.candidates.clone();
 
         let mut update_candidates = || -> bool {
@@ -163,7 +163,7 @@ impl SudokuGrid {
         let mut sgrid = SudokuGrid::new();
         // Latin initialization
         // Generate random numbers for the three main box diagonals and backtrack to fill the rest
-        let mut nums: Vec<u8> = (1..=9 as u8).collect();
+        let mut nums: Vec<usize> = (1..=9 as usize).collect();
         for i in (0..9).step_by(3) {
             nums.shuffle(&mut rand::thread_rng()); // You'll need the `rand` crate for shuffling.
             for j in 0..3 {
@@ -221,8 +221,8 @@ impl SudokuGrid {
         return cells;
     }
 
-    fn order_domain_values(&self, row: usize, col: usize) -> Vec<u8> {
-        let cells_affects = |val: u8| -> i32 {
+    fn order_domain_values(&self, row: usize, col: usize) -> Vec<usize> {
+        let cells_affects = |val: usize| -> i32 {
             let mut cells = 0;
             for i in 0..9 {
                 if self.candidates[row][i].contains(&val) {
@@ -245,7 +245,7 @@ impl SudokuGrid {
             
             return cells - 3 // Will count itself 3 times
         };
-        let mut ret : Vec<u8> = self.candidates[row][col].clone().into_iter().collect();
+        let mut ret : Vec<usize> = self.candidates[row][col].clone().into_iter().collect();
         // Least constraining value, pick value that limits the least
         ret.sort_by_key(|x| cells_affects(*x));
         return ret;
@@ -273,7 +273,7 @@ impl SudokuGrid {
         return false;
     }
 
-    pub fn is_valid_sudoku_placement(&self, digit: u8, row: usize, col: usize) -> bool {
+    pub fn is_valid_sudoku_placement(&self, digit: usize, row: usize, col: usize) -> bool {
         return self.candidates[row][col].contains(&digit)
     }
 
@@ -282,7 +282,7 @@ impl SudokuGrid {
             for col in 0..9 {
                 if self.grid[row][col] == 0 {
                     // Start with all numbers as potential candidates
-                    let mut cell_candidates: HashSet<u8> = (1..=9).collect();
+                    let mut cell_candidates: HashSet<usize> = (1..=9).collect();
 
                     // Remove numbers from the same row, column, and box
                     for i in 0..9 {
@@ -374,7 +374,7 @@ impl SudokuGrid {
         corda.0 == cordb.0 || corda.1 == cordb.1 || (corda.0 / 3 == cordb.0 / 3 && corda.1 / 3 == cordb.1/3)
     }
 
-    pub fn get_conjugate_pairs(&self, num: u8) -> AdjacencyGraph {
+    pub fn get_conjugate_pairs(&self, num: usize) -> AdjacencyGraph {
         let mut graph = AdjacencyGraph::new();
 
         // Box
@@ -420,6 +420,105 @@ impl SudokuGrid {
         }
 
         return graph;
+    }
+
+    pub fn get_contained_units(cells: &Vec<(usize, usize)>) -> Vec<UnitType> {
+        if cells.is_empty() { return Default::default();}
+        let mut ret = Vec::default();
+
+        // Check if all same box
+        let box_match = cells.iter().all(|(row, col)| *row/3 == cells[0].0/3 && *col/3 == cells[0].1/3);
+        if box_match {
+            ret.push(UnitType::Box);
+        }
+
+        // Check if all same row
+        let row_match = cells.iter().all(|(row, _)| *row == cells[0].0);
+        if row_match {
+            ret.push(UnitType::Row);
+        }
+        // Check if all same col
+        let col_match = cells.iter().all(|(_, col)| *col == cells[0].1);
+        if col_match {
+            ret.push(UnitType::Col);
+        }
+        
+        ret
+    }
+
+    pub fn get_all_units_from_unit_type(axis: UnitType) -> Vec<Vec<(usize, usize)>> {
+        match axis {
+            UnitType::Box => {
+                // Generate cells for boxes
+                let mut boxes = Vec::new();
+                for box_row in 0..3 {
+                    for box_col in 0..3 {
+                        let mut box_cells = Vec::new();
+                        for row in 0..3 {
+                            for col in 0..3 {
+                                box_cells.push((box_row * 3 + row, box_col * 3 + col));
+                            }
+                        }
+                        boxes.push(box_cells);
+                    }
+                }
+                boxes
+            },
+            UnitType::Row => {
+                // Generate cells for rows
+                let mut rows = Vec::new();
+                for row in 0..9 {
+                    let mut row_cells = Vec::new();
+                    for col in 0..9 {
+                        row_cells.push((row, col));
+                    }
+                    rows.push(row_cells);
+                }
+                rows
+            },
+            UnitType::Col => {
+                // Generate cells for columns
+                let mut cols = Vec::new();
+                for col in 0..9 {
+                    let mut col_cells = Vec::new();
+                    for row in 0..9 {
+                        col_cells.push((row, col));
+                    }
+                    cols.push(col_cells);
+                }
+                cols
+            },
+        }
+    }
+
+    pub fn get_cells_in_unit_from(unit: UnitType, cell: (usize, usize)) -> Vec<(usize, usize)>{
+        match unit {
+            UnitType::Box => {
+                // Generate cells for boxes
+                let mut box_cells = Vec::new();
+                for row in 0..3 {
+                    for col in 0..3 {
+                        box_cells.push((cell.0 / 3 * 3 + row, cell.1 / 3 * 3 + col));
+                    }
+                }
+                box_cells
+            },
+            UnitType::Row => {
+                // Generate cells for rows
+                let mut row_cells = Vec::new();
+                for col in 0..9 {
+                    row_cells.push((cell.0, col));
+                }
+                row_cells
+            },
+            UnitType::Col => {
+                let mut col_cells = Vec::new();
+                for row in 0..9 {
+                    col_cells.push((row, cell.1));
+                }
+                col_cells
+            },
+        }
     }
 
 }

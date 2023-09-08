@@ -1,3 +1,5 @@
+use crate::sudoku_visualizer_builder::Colors;
+
 use super::sudoku_solver::*;
 use super::super::sudoku_grid::*;
 
@@ -6,84 +8,65 @@ use itertools::Itertools;
 
 pub struct NakedCandidatesSolver;
 
+// A Naked Candidates Solver finds a group of n digits across any unit.
+// Once found, it can remove all instances of those candidates in every shared unit.
 impl SudokuSolveMethod for NakedCandidatesSolver {
-    fn apply(&self, sgrid: &mut SudokuGrid) -> bool {
-        let mut applied = false;
+    fn apply(&self, sgrid: &SudokuGrid) -> Option<SolverResult> {
 
-        // for Pairs, Triples, and Quads
-        // Given some set of cells within a unit determine if there are any NakedCandidates
-        fn determine_candidates(sgrid: &mut SudokuGrid, cells: &[(usize, usize)], removal: Vec<(usize, usize)>) -> bool {
-            let mut applied = false;
-
-            let mut candidates_set: HashSet<u8> = HashSet::new();
-            for &(row, col) in cells {
-                for &candidate in &sgrid.candidates[row][col] {
-                    candidates_set.insert(candidate);
-                }
+        for combs in 2..=3 {
+            for unit_type in [UnitType::Box, UnitType::Row, UnitType::Col] {
+                if let Some(ret) = self.check_units(sgrid, combs, unit_type) { return Some(ret); };
             }
-            if candidates_set.len() == cells.len() {
-                let mut print_once = true;
+        }
 
-                for (i,j) in removal {
-                    if cells.contains(&(i, j)) {
-                        continue;
+        None
+    }
+}
+
+impl NakedCandidatesSolver {
+    fn check_units(&self, sgrid: &SudokuGrid, combs: usize, unit_type: UnitType) -> Option<SolverResult> {       
+        for all_cells in SudokuGrid::get_all_units_from_unit_type(unit_type) {
+            let unsolved_cells: Vec<(usize, usize)> = all_cells.iter().filter(|&&(row, col)| sgrid.grid[row][col] == 0).cloned().collect();
+            for n_cell_combination in unsolved_cells.iter().cloned().combinations(combs) {
+                let all_candidates: HashSet<usize> = n_cell_combination.iter().flat_map(|(row, col)| &sgrid.candidates[*row][*col]).cloned().collect();
+                // If we didnt find n candidates for n cells then this is not a naked candidate.
+                if all_candidates.len() != combs { continue; }
+
+                let mut visualizer_updates = Vec::new();
+                let mut reductions = Vec::new();
+
+                visualizer_updates.push(VisualizerUpdate::SetTitle(
+                    format!("Naked Candidates {}", match combs {
+                        2 => "Pairs",
+                        3 => "Triples",
+                        4 => "Quads",
+                        _ => "Unkown",
+                    })
+                ));
+
+                for &(row, col) in &n_cell_combination {
+                    for &candidate in &sgrid.candidates[row][col] {
+                        visualizer_updates.push(VisualizerUpdate::HighlightCandidate(row, col, candidate, Colors::DIGIT_USED_TO_DETERMINE_SOLUTION));
                     }
-                    for &candidate in &candidates_set {
-                        if sgrid.candidates[i][j].remove(&candidate) {
-                            applied = true;
-                            if print_once {
-                                println!("Solver [NakedCandidatesSolver] found candidate set {:?} at ({:?})", candidates_set, cells);
-                                print_once = false;
+                    visualizer_updates.push(VisualizerUpdate::ColorCell(row, col, Colors::CELL_USED_TO_DETERMINE_SOLUTION));
+                }
+
+                for unit in SudokuGrid::get_contained_units(&n_cell_combination) {
+                    for (row, col) in SudokuGrid::get_cells_in_unit_from(unit, n_cell_combination[0]) {
+                        if n_cell_combination.contains(&&(row, col)) { continue; }
+                        visualizer_updates.push(VisualizerUpdate::ColorCell(row, col, Colors::CELL_MARKED_FOR_CANDIDATE_REMOVEAL));
+                        for &num in &all_candidates {
+                            if sgrid.candidates[row][col].contains(&num) {
+                                visualizer_updates.push(VisualizerUpdate::HighlightCandidate(row, col, num, Colors::CANDIDATE_MARKED_FOR_REMOVAL));
+                                reductions.push(SolverAction::CandidateReduction(row, col, num));
                             }
-                            println!("Solver [NakedCandidatesSolver] found candidate reduction {} at ({},{})", candidate, i, j);
                         }
                     }
                 }
-            }
-            applied
-        }
-
-        // Box
-        for i in (0..9).step_by(3) {
-            for j in (0..9).step_by(3)  {
-                let cells: Vec<(usize, usize)> = (i..i+3)
-                    .flat_map(|i| (j..j+3).map(move |j| (i, j)))
-                    .filter(|&(row, col)| sgrid.grid[row][col] == 0)
-                    .collect();
-
-                for combs in 2..=4 {
-                    for comb in cells.iter().combinations(combs) {
-                        applied |= determine_candidates(sgrid, &comb.into_iter().map(|&x| x).collect::<Vec<_>>()[..], cells.clone());
-                    }
-                }
+                if !reductions.is_empty() { return Some((reductions, visualizer_updates)); }
             }
         }
 
-        // Row
-        for row in 0..9 {
-            let cells: Vec<(usize, usize)> = (0..9).map(|col| (row, col))
-                .filter(|&(row, col)| sgrid.grid[row][col] == 0)
-                .collect();
-
-            for combs in 2..=4 {
-                for comb in cells.iter().combinations(combs) {
-                    applied |= determine_candidates(sgrid, &comb.into_iter().map(|&x| x).collect::<Vec<_>>()[..], cells.clone());
-                }
-            }
-        }
-
-        // Column
-        for col in 0..9 {
-            let cells: Vec<(usize, usize)> = (0..9).map(|row| (row, col))
-                .filter(|&(row, col)| sgrid.grid[row][col] == 0)
-                .collect();
-            for combs in 2..=4 {
-                for comb in cells.iter().combinations(combs) {
-                    applied |= determine_candidates(sgrid, &comb.into_iter().map(|&x| x).collect::<Vec<_>>()[..], cells.clone());
-                }
-            }
-        }
-
-        applied
+        None
     }
 }
