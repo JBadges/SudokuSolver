@@ -192,7 +192,7 @@ impl SudokuSolveMethod for Medusa3DSolver {
                 let conflicting_color = {
                     let mut result = None;
 
-                    'outer: for uncolored_cell in iproduct!(0..9, 0..9).filter(|&(row, col)| !bicolored_graph.keys().any(|&(rowb, colb, _)| row == rowb && col == colb)) {
+                    for uncolored_cell in iproduct!(0..9, 0..9).filter(|&(row, col)| !bicolored_graph.keys().any(|&(rowb, colb, _)| row == rowb && col == colb)) {
                         let mut candidate_colors: HashMap<usize, HashSet<BiColor>> = HashMap::new();
                         for cell_seen_by_uncolored_cell in SudokuGrid::generate_cells_seen_from_cord(uncolored_cell) {
                             for &candidate in &sgrid.candidates[uncolored_cell.0][uncolored_cell.1] {
@@ -203,7 +203,6 @@ impl SudokuSolveMethod for Medusa3DSolver {
                                 }
                             }
                         }
-                        println!("{:?}", candidate_colors);
                         if candidate_colors.iter().all(|(k, v)| v.len() != 1) { continue; }
 
                         // All colors are 1, but they must be the same color
@@ -213,7 +212,7 @@ impl SudokuSolveMethod for Medusa3DSolver {
                                 if candidate_colors.iter().all(|(_, set)| set.len() == 1 && set.contains(first_color)) {
                                     // All HashSet values are the same
                                     result = Some((uncolored_cell, *first_color));
-                                    break 'outer;
+                                    break;
                                 } else {
                                     // There's at least one HashSet that's different
                                     continue;
