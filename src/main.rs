@@ -9,7 +9,7 @@ use sudoku_generator::solvers::hidden_candidates_solver::HiddenCandidatesSolver;
 use sudoku_generator::solvers::intersection_removal_solver::IntersectionRemovalSolver;
 use sudoku_generator::solvers::x_wing_solver::XWingSolver;
 use sudoku_generator::solvers::singles_chains_solver::SinglesChainsSolver;
-// use sudoku_generator::solvers::y_wing_solver::YWingSolver;
+use sudoku_generator::solvers::y_wing_solver::YWingSolver;
 // use sudoku_generator::solvers::swordfish_solver::SwordfishSolver;
 // use sudoku_generator::solvers::jellyfish_solver::JellyfishSolver;
 // use sudoku_generator::solvers::medusa_3d_solver::Medusa3DSolver;
@@ -35,7 +35,7 @@ fn main() {
     .title("Sudoku Visualizer")
     .build();
 
-    // let rand_grid = SudokuGrid::create_sudoku_puzzle(100);
+    let rand_grid = SudokuGrid::create_sudoku_puzzle(100);
     let hidden_single = SudokuGrid::from_string("720096003000205000080004020000000060106503807040000000030800090000702000200430018");
     let hidden_triple = SudokuGrid::from_string("300000000970010000600583000200000900500621003008000005000435002000090056000000001");
     let simplest_sudoku = SudokuGrid::from_string("000105000140000670080002400063070010900000003010090520007200080026000035000409000");
@@ -45,7 +45,7 @@ fn main() {
     let simple_col_2 = SudokuGrid::from_string("123000587005817239987000164051008473390750618708100925076000891530081746810070352");
     let simple_col_4 = SudokuGrid::from_string("036210840800045631014863009287030456693584000145672398408396000350028064060450083");
     
-    let grid = intersection_removal;
+    let grid = xwing;
 
     let mut solver: SudokuSolverManager = SudokuSolverManager::new(grid.clone());
     println!("Sudoku id: {}", grid.to_number_string());
@@ -57,7 +57,7 @@ fn main() {
     solver.add_solver(Box::new(IntersectionRemovalSolver));
     solver.add_solver(Box::new(XWingSolver));
     solver.add_solver(Box::new(SinglesChainsSolver));
-    // solver.add_solver(Box::new(YWingSolver));
+    solver.add_solver(Box::new(YWingSolver));
     // solver.add_solver(Box::new(SwordfishSolver));
     // solver.add_solver(Box::new(JellyfishSolver));
     // solver.add_solver(Box::new(Medusa3DSolver));
