@@ -57,7 +57,7 @@ impl IntersectionRemovalSolver {
 
                 for &(row, col) in &appeared_in_unit {
                     if sgrid.candidates[row][col].contains(&num) {
-                        visualizer_updates.push(VisualizerUpdate::HighlightCandidate(row, col, num, Colors::DIGIT_USED_TO_DETERMINE_SOLUTION));
+                        visualizer_updates.push(VisualizerUpdate::ColorCandidate(row, col, num, Colors::DIGIT_USED_TO_DETERMINE_SOLUTION));
                     }
                 }
 
@@ -72,7 +72,7 @@ impl IntersectionRemovalSolver {
                     if unit.contains(&(row, col)) { continue; }
                     visualizer_updates.push(VisualizerUpdate::ColorCell(row, col, Colors::CELL_MARKED_FOR_CANDIDATE_REMOVEAL));
                     if sgrid.candidates[row][col].contains(&num) {
-                        visualizer_updates.push(VisualizerUpdate::HighlightCandidate(row, col, num, Colors::CANDIDATE_MARKED_FOR_REMOVAL));
+                        visualizer_updates.push(VisualizerUpdate::ColorCandidate(row, col, num, Colors::CANDIDATE_MARKED_FOR_REMOVAL));
                         reductions.push(SolverAction::CandidateReduction(row, col, num));
                     }
                 }                
@@ -108,7 +108,7 @@ impl IntersectionRemovalSolver {
                 for &(row, col) in unit {
                     visualizer_updates.push(VisualizerUpdate::ColorCell(row, col, Colors::CELL_USED_TO_DETERMINE_SOLUTION));
                     if sgrid.candidates[row][col].contains(&num) {
-                        visualizer_updates.push(VisualizerUpdate::HighlightCandidate(row, col, num, Colors::DIGIT_USED_TO_DETERMINE_SOLUTION));
+                        visualizer_updates.push(VisualizerUpdate::ColorCandidate(row, col, num, Colors::DIGIT_USED_TO_DETERMINE_SOLUTION));
                     }
                 }
 
@@ -116,7 +116,7 @@ impl IntersectionRemovalSolver {
                 for &(row, col) in SudokuGrid::get_cells_in_unit_from(UnitType::Box, appeared_in_unit[0]).iter().filter(|&cord| !unit.contains(cord)) {
                     visualizer_updates.push(VisualizerUpdate::ColorCell(row, col, Colors::CELL_MARKED_FOR_CANDIDATE_REMOVEAL));
                     if sgrid.candidates[row][col].contains(&num) {
-                        visualizer_updates.push(VisualizerUpdate::HighlightCandidate(row, col, num, Colors::CANDIDATE_MARKED_FOR_REMOVAL));
+                        visualizer_updates.push(VisualizerUpdate::ColorCandidate(row, col, num, Colors::CANDIDATE_MARKED_FOR_REMOVAL));
                         reductions.push(SolverAction::CandidateReduction(row, col, num));
                     }
                 }                

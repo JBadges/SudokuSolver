@@ -3,7 +3,7 @@ use std::collections::HashSet;
 use std::collections::VecDeque;
 
 pub struct AdjacencyGraph {
-    edges: HashMap<(usize, usize), HashSet<(usize, usize)>>,
+    pub edges: HashMap<(usize, usize), HashSet<(usize, usize)>>,
 }
 
 #[derive(Debug, Eq, PartialEq, Copy, Clone)]

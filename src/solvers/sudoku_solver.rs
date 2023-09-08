@@ -11,7 +11,8 @@ pub enum VisualizerUpdate {
     SetTitle(String),
     ColorDigit(usize, usize, Color),
     ColorCell(usize, usize, Color),
-    HighlightCandidate(usize, usize, usize, Color),
+    ColorCandidate(usize, usize, usize, Color),
+    BackgroundCandidate(usize, usize, usize, Color),
     CreateChain(usize, usize, usize, usize, usize, usize, Color),
 }
 

@@ -73,7 +73,7 @@ impl XWingSolver {
                     for (row, col) in SudokuGrid::get_cells_in_unit_from(unit_type, cell_pair[0]) {
                         visualizer_updates.push(VisualizerUpdate::ColorCell(row, col, Colors::CELL_USED_TO_DETERMINE_SOLUTION));
                         if sgrid.candidates[row][col].contains(&num) {
-                            visualizer_updates.push(VisualizerUpdate::HighlightCandidate(row, col, num, Colors::DIGIT_USED_TO_DETERMINE_SOLUTION));
+                            visualizer_updates.push(VisualizerUpdate::ColorCandidate(row, col, num, Colors::DIGIT_USED_TO_DETERMINE_SOLUTION));
                         }
                     }
                 }
@@ -95,7 +95,7 @@ impl XWingSolver {
                         if unit_pair[0].contains(&(row, col)) || unit_pair[1].contains(&(row, col)) { continue; }
                         visualizer_updates.push(VisualizerUpdate::ColorCell(row, col, Colors::CELL_MARKED_FOR_CANDIDATE_REMOVEAL));
                         if sgrid.candidates[row][col].contains(&num) {
-                            visualizer_updates.push(VisualizerUpdate::HighlightCandidate(row, col, num, Colors::CANDIDATE_MARKED_FOR_REMOVAL));
+                            visualizer_updates.push(VisualizerUpdate::ColorCandidate(row, col, num, Colors::CANDIDATE_MARKED_FOR_REMOVAL));
                             reductions.push(SolverAction::CandidateReduction(row, col, num));
                         }
                     }

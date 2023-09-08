@@ -8,7 +8,7 @@ use sudoku_generator::solvers::naked_candidates_solver::NakedCandidatesSolver;
 use sudoku_generator::solvers::hidden_candidates_solver::HiddenCandidatesSolver;
 use sudoku_generator::solvers::intersection_removal_solver::IntersectionRemovalSolver;
 use sudoku_generator::solvers::x_wing_solver::XWingSolver;
-// use sudoku_generator::solvers::singles_chains_solver::SinglesChainsSolver;
+use sudoku_generator::solvers::singles_chains_solver::SinglesChainsSolver;
 // use sudoku_generator::solvers::y_wing_solver::YWingSolver;
 // use sudoku_generator::solvers::swordfish_solver::SwordfishSolver;
 // use sudoku_generator::solvers::jellyfish_solver::JellyfishSolver;
@@ -42,8 +42,10 @@ fn main() {
     let medusa = SudokuGrid::from_string("000000000001900500560310090100600028004000700270004003040068035002005900000000000");
     let intersection_removal = SudokuGrid::from_string("000921003009000060000000500080403006007000800500700040003000000020000700800195000");
     let xwing = SudokuGrid::from_string("093004560060003140004608309981345000347286951652070483406002890000400010029800034");
-
-    let grid = xwing;
+    let simple_col_2 = SudokuGrid::from_string("123000587005817239987000164051008473390750618708100925076000891530081746810070352");
+    let simple_col_4 = SudokuGrid::from_string("036210840800045631014863009287030456693584000145672398408396000350028064060450083");
+    
+    let grid = intersection_removal;
 
     let mut solver: SudokuSolverManager = SudokuSolverManager::new(grid.clone());
     println!("Sudoku id: {}", grid.to_number_string());
@@ -54,7 +56,7 @@ fn main() {
     solver.add_solver(Box::new(HiddenCandidatesSolver));
     solver.add_solver(Box::new(IntersectionRemovalSolver));
     solver.add_solver(Box::new(XWingSolver));
-    // solver.add_solver(Box::new(SinglesChainsSolver));
+    solver.add_solver(Box::new(SinglesChainsSolver));
     // solver.add_solver(Box::new(YWingSolver));
     // solver.add_solver(Box::new(SwordfishSolver));
     // solver.add_solver(Box::new(JellyfishSolver));

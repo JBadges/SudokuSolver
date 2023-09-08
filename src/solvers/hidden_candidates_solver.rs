@@ -80,11 +80,11 @@ impl HiddenCandidatesSolver {
                         if sgrid.candidates[row][col].contains(&num) {
                             for &val in &candidates_combination {
                                 if sgrid.candidates[row][col].contains(&val) {
-                                    visualizer_updates.push(VisualizerUpdate::HighlightCandidate(row, col, val, Colors::DIGIT_USED_TO_DETERMINE_SOLUTION));
+                                    visualizer_updates.push(VisualizerUpdate::ColorCandidate(row, col, val, Colors::DIGIT_USED_TO_DETERMINE_SOLUTION));
                                 }
                             }
                             visualizer_updates.push(VisualizerUpdate::ColorCell(row, col, Colors::CELL_MARKED_FOR_CANDIDATE_REMOVEAL));
-                            visualizer_updates.push(VisualizerUpdate::HighlightCandidate(row, col, num, Colors::CANDIDATE_MARKED_FOR_REMOVAL));
+                            visualizer_updates.push(VisualizerUpdate::ColorCandidate(row, col, num, Colors::CANDIDATE_MARKED_FOR_REMOVAL));
                             reductions.push(SolverAction::CandidateReduction(row, col, num));
                         }
                     }

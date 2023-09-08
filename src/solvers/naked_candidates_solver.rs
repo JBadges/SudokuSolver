@@ -46,7 +46,7 @@ impl NakedCandidatesSolver {
 
                 for &(row, col) in &n_cell_combination {
                     for &candidate in &sgrid.candidates[row][col] {
-                        visualizer_updates.push(VisualizerUpdate::HighlightCandidate(row, col, candidate, Colors::DIGIT_USED_TO_DETERMINE_SOLUTION));
+                        visualizer_updates.push(VisualizerUpdate::ColorCandidate(row, col, candidate, Colors::DIGIT_USED_TO_DETERMINE_SOLUTION));
                     }
                     visualizer_updates.push(VisualizerUpdate::ColorCell(row, col, Colors::CELL_USED_TO_DETERMINE_SOLUTION));
                 }
@@ -57,7 +57,7 @@ impl NakedCandidatesSolver {
                         visualizer_updates.push(VisualizerUpdate::ColorCell(row, col, Colors::CELL_MARKED_FOR_CANDIDATE_REMOVEAL));
                         for &num in &all_candidates {
                             if sgrid.candidates[row][col].contains(&num) {
-                                visualizer_updates.push(VisualizerUpdate::HighlightCandidate(row, col, num, Colors::CANDIDATE_MARKED_FOR_REMOVAL));
+                                visualizer_updates.push(VisualizerUpdate::ColorCandidate(row, col, num, Colors::CANDIDATE_MARKED_FOR_REMOVAL));
                                 reductions.push(SolverAction::CandidateReduction(row, col, num));
                             }
                         }
