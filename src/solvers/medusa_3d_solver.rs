@@ -203,7 +203,7 @@ impl SudokuSolveMethod for Medusa3DSolver {
                                 }
                             }
                         }
-                        if candidate_colors.iter().all(|(k, v)| v.len() != 1) { continue; }
+                        if candidate_colors.iter().all(|(_, v)| v.len() != 1) { continue; }
 
                         // All colors are 1, but they must be the same color
                         if let Some((_, first_set)) = candidate_colors.iter().next() {

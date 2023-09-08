@@ -3,7 +3,7 @@ use crate::sudoku_visualizer_builder::Colors;
 use super::sudoku_solver::*;
 use super::super::sudoku_grid::*;
 
-use std::collections::{HashSet, HashMap};
+use std::collections::HashSet;
 use itertools::Itertools;
 
 pub struct XWingSolver;

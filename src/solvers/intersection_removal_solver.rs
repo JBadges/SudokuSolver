@@ -3,8 +3,6 @@ use crate::sudoku_visualizer_builder::Colors;
 use super::super::sudoku_grid::*;
 use super::sudoku_solver::*;
 
-use std::collections::HashSet;
-
 pub struct IntersectionRemovalSolver;
 
 // An intersection removal incorporates both pointing pairs/triples and

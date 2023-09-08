@@ -78,9 +78,9 @@ impl SudokuSolverManager {
         applied_solver
     }
 
-    pub fn generate_output_pdf(&self, file_path: &str) {
+    // pub fn generate_output_pdf(&self, file_path: &str) {
 
-    }
+    // }
 }
 
 

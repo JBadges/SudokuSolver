@@ -77,7 +77,7 @@ impl AdjacencyGraph {
         }
 
         // Hacky way to include an edge between bivalued cell with no conjugate pair
-        for &(row, col, num) in &self_bivalued_nodes {
+        for &(row, col, _) in &self_bivalued_nodes {
             if sgrid.candidates[row][col].len() == 2 {
                 let mut map_iter = sgrid.candidates[row][col].iter();
 

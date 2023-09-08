@@ -1,5 +1,3 @@
-use std::collections::HashSet;
-
 use crate::sudoku_visualizer_builder::Colors;
 
 use super::sudoku_solver::*;
