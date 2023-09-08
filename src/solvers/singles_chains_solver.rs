@@ -6,7 +6,7 @@ use super::super::sudoku_grid::SudokuGrid;
 use super::sudoku_solver::*;
 use super::super::adjacency_graph::{AdjacencyGraph, BiColor};
 
-use itertools::Itertools;
+use itertools::{Itertools, iproduct};
 use raylib::prelude::Color;
 
 pub struct SinglesChainsSolver;
@@ -75,17 +75,15 @@ impl SudokuSolveMethod for SinglesChainsSolver {
                 process_same_color_in_unit(&blue_nodes);
 
                 // Cell sees both colors
-                for row in 0..9 {
-                    for col in 0..9 {
-                        let cell = (row, col);
-                        let sees_red = red_nodes.iter().any(|a| SudokuGrid::cells_see_each_other(cell, *a) && *a != cell);
-                        let sees_blue = blue_nodes.iter().any(|a| SudokuGrid::cells_see_each_other(cell, *a) && *a != cell);
-                        if sees_red && sees_blue && sgrid.candidates[row][col].contains(&num) {
-                            visualizer_updates.push(VisualizerUpdate::ColorCandidate(row, col, num, Colors::CANDIDATE_MARKED_FOR_REMOVAL));
-                            visualizer_updates.push(VisualizerUpdate::ColorCell(row, col, Colors::CELL_MARKED_FOR_CANDIDATE_REMOVEAL));
-                            reductions.push(SolverAction::CandidateReduction(row, col, num));
-                        }
+                for (row, col) in iproduct!(0..9, 0..9).collect::<Vec<(usize, usize)>>() {
+                    let sees_red = red_nodes.iter().any(|&red_cell| SudokuGrid::cells_see_each_other((row, col), red_cell) && red_cell != (row, col));
+                    let sees_blue = blue_nodes.iter().any(|&blue_cell| SudokuGrid::cells_see_each_other((row, col), blue_cell) && blue_cell != (row, col));
+                    if sees_red && sees_blue && sgrid.candidates[row][col].contains(&num) {
+                        visualizer_updates.push(VisualizerUpdate::ColorCandidate(row, col, num, Colors::CANDIDATE_MARKED_FOR_REMOVAL));
+                        visualizer_updates.push(VisualizerUpdate::ColorCell(row, col, Colors::CELL_MARKED_FOR_CANDIDATE_REMOVEAL));
+                        reductions.push(SolverAction::CandidateReduction(row, col, num));
                     }
+            
                 }
 
             }
