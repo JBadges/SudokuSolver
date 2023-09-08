@@ -15,6 +15,7 @@ impl Colors {
     pub const CELL_USED_TO_DETERMINE_SOLUTION: Color = Color::new(196, 145, 69, 255);
     pub const DIGIT_USED_TO_DETERMINE_SOLUTION: Color = Color::new(204, 242, 15, 255);
     pub const CELL_MARKED_FOR_CANDIDATE_REMOVEAL: Color = Color::new(175, 203, 204, 255);
+    pub const CHAIN_COLOR: Color = Color::new(123, 126, 143, 255);
 }
 
 #[derive(Clone)]

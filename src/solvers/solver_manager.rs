@@ -59,6 +59,7 @@ impl SudokuSolverManager {
                     VisualizerUpdate::ColorDigit(row, col, color) => visualizer.color_digit(row, col, self.sgrid.grid[row][col], color),
                     VisualizerUpdate::ColorCell(row, col, color) => visualizer.color_cell(row, col, color),
                     VisualizerUpdate::HighlightCandidate(row, col, num, color) => visualizer.color_candidate(row, col, num, color),
+                    VisualizerUpdate::CreateChain(row_from, col_from, num_from, row_to, col_to, num_to, color) => visualizer.add_chain(row_from, col_from, num_from, row_to, col_to, num_to, color),
                 }
             }
             applied_solver = true;

@@ -8,7 +8,7 @@ pub struct SudokuGrid {
     pub grid: [[usize; 9]; 9],
     pub candidates: [[HashSet<usize>; 9]; 9]
 }
-#[derive(PartialEq)]
+#[derive(PartialEq, Copy, Clone)]
 pub enum UnitType {
     Row,
     Col,

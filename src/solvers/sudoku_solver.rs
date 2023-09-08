@@ -12,6 +12,7 @@ pub enum VisualizerUpdate {
     ColorDigit(usize, usize, Color),
     ColorCell(usize, usize, Color),
     HighlightCandidate(usize, usize, usize, Color),
+    CreateChain(usize, usize, usize, usize, usize, usize, Color),
 }
 
 pub type SolverResult = (Vec<SolverAction>, Vec<VisualizerUpdate>);

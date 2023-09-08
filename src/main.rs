@@ -7,7 +7,7 @@ use sudoku_generator::solvers::naked_singles_solver::NakedSinglesSolver;
 use sudoku_generator::solvers::naked_candidates_solver::NakedCandidatesSolver;
 use sudoku_generator::solvers::hidden_candidates_solver::HiddenCandidatesSolver;
 use sudoku_generator::solvers::intersection_removal_solver::IntersectionRemovalSolver;
-// use sudoku_generator::solvers::x_wing_solver::XWingSolver;
+use sudoku_generator::solvers::x_wing_solver::XWingSolver;
 // use sudoku_generator::solvers::singles_chains_solver::SinglesChainsSolver;
 // use sudoku_generator::solvers::y_wing_solver::YWingSolver;
 // use sudoku_generator::solvers::swordfish_solver::SwordfishSolver;
@@ -41,8 +41,9 @@ fn main() {
     let simplest_sudoku = SudokuGrid::from_string("000105000140000670080002400063070010900000003010090520007200080026000035000409000");
     let medusa = SudokuGrid::from_string("000000000001900500560310090100600028004000700270004003040068035002005900000000000");
     let intersection_removal = SudokuGrid::from_string("000921003009000060000000500080403006007000800500700040003000000020000700800195000");
+    let xwing = SudokuGrid::from_string("093004560060003140004608309981345000347286951652070483406002890000400010029800034");
 
-    let grid = intersection_removal;
+    let grid = xwing;
 
     let mut solver: SudokuSolverManager = SudokuSolverManager::new(grid.clone());
     println!("Sudoku id: {}", grid.to_number_string());
@@ -52,7 +53,7 @@ fn main() {
     solver.add_solver(Box::new(NakedCandidatesSolver));
     solver.add_solver(Box::new(HiddenCandidatesSolver));
     solver.add_solver(Box::new(IntersectionRemovalSolver));
-    // solver.add_solver(Box::new(XWingSolver));
+    solver.add_solver(Box::new(XWingSolver));
     // solver.add_solver(Box::new(SinglesChainsSolver));
     // solver.add_solver(Box::new(YWingSolver));
     // solver.add_solver(Box::new(SwordfishSolver));
@@ -152,18 +153,24 @@ fn main() {
         }
     
         // Draw chains
-        for (((row_from, col_from, _), (row_to, col_to, _)), color) in &builder.chains {
-            let x1 = (50 + col_from * 80 + 40) as i32;
-            let y1 = (50 + row_from * 80 + 40) as i32;
-            let x2 = (50 + col_to * 80 + 40) as i32;
-            let y2 = (50 + row_to * 80 + 40) as i32;
-    
+        for (&((row_from, col_from, num_from), (row_to, col_to, num_to)), color) in &builder.chains {
+            let x_offset_from = (((num_from as i32 - 1) % 3 - 1) * 20) as i32;
+            let y_offset_from = (((num_from as i32 - 1) / 3 - 1) * 20) as i32;
+            let x_offset_to = (((num_to as i32 - 1) % 3 - 1) * 20) as i32;
+            let y_offset_to = (((num_to as i32 - 1) / 3 - 1) * 20) as i32;
+        
+            let x1 = GRID_TOP_LEFT_X + col_from as i32 * CELL_SIZE + CELL_SIZE / 2 + x_offset_from;
+            let y1 = GRID_TOP_LEFT_Y + row_from as i32 * CELL_SIZE + CELL_SIZE / 2 + y_offset_from;
+            let x2 = GRID_TOP_LEFT_X + col_to as i32 * CELL_SIZE + CELL_SIZE / 2 + x_offset_to;
+            let y2 = GRID_TOP_LEFT_Y + row_to as i32 * CELL_SIZE + CELL_SIZE / 2 + y_offset_to;
+        
             let control_point = Vector2::new((x1 + x2) as f32 / 2.0, (y1 + y2) as f32 / 2.0 - 50.0);
             let start_point = Vector2::new(x1 as f32, y1 as f32);
             let end_point = Vector2::new(x2 as f32, y2 as f32);
-    
+        
             d.draw_line_bezier_quad(start_point, end_point, control_point, 2.0, color);
         }
+        
         if d.is_key_pressed(KeyboardKey::KEY_SPACE) && !done {
             if iter == 2 {
                 println!("Running next solver iteration");
