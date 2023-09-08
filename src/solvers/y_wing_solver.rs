@@ -18,13 +18,13 @@ impl SudokuSolveMethod for YWingSolver {
             .collect();
 
         for &hinge in &cells_with_two_candidates {
-            // Find all possible wings
-            let mut possible_wings = HashSet::new();
-            for &possible_wing in &cells_with_two_candidates {
-                if possible_wing == hinge { continue; }
-                // Wings are valid if they are in the same row, col, or box. (Can see each other)
-                if SudokuGrid::cells_see_each_other(hinge, possible_wing) { possible_wings.insert(possible_wing); }
-            }
+            // Find all possible wings. 
+            // Possible wings are cells that can see the hinge that also have only 2 candidates.
+            let possible_wings: Vec<(usize, usize)> = cells_with_two_candidates.iter()
+                .filter(|&&possible_wing| possible_wing != hinge && SudokuGrid::cells_see_each_other(hinge, possible_wing))
+                .cloned()
+                .collect();
+
 
             // For pairs of wings check if they work
             for wings in possible_wings.iter().cloned().combinations(2) {
