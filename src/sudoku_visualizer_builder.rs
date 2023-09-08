@@ -16,6 +16,14 @@ impl Colors {
     pub const DIGIT_USED_TO_DETERMINE_SOLUTION: Color = Color::new(204, 242, 15, 255);
     pub const CELL_MARKED_FOR_CANDIDATE_REMOVEAL: Color = Color::new(175, 203, 204, 255);
     pub const CHAIN_COLOR: Color = Color::new(123, 126, 143, 255);
+    // pub const CHAIN_COLORS: Vec<Color> = vec![
+    //     Color::new(123, 126, 143, 255),
+    //     Color::new(138, 156, 121, 255),
+    //     Color::new(89, 163, 217, 255),
+    //     Color::new(75, 58, 112, 255),
+    //     Color::new(184, 84, 116, 255),
+    //     Color::new(163, 227, 189, 255)
+    // ];
     pub const CHAIN_RED: Color = Color::new(237, 188, 97, 255);
     pub const CHAIN_BLUE: Color = Color::new(110, 212, 210, 255);
 }

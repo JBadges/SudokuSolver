@@ -1,80 +1,108 @@
+use crate::sudoku_visualizer_builder::Colors;
+
 use super::sudoku_solver::*;
 use super::super::sudoku_grid::*;
 
 use std::collections::HashSet;
 use itertools::Itertools;
-use crate::sudoku_latex_builder::SudokuLatexBuilder;
 
 pub struct SwordfishSolver;
 
 impl SudokuSolveMethod for SwordfishSolver {
-    fn apply(&self, sgrid: &mut SudokuGrid, visualizer: &mut SudokuLatexBuilder) -> bool {
+    fn apply(&self, sgrid: &SudokuGrid) -> Option<SolverResult> {
+        for unit_type in [UnitType::Row, UnitType::Col] {
+            if let Some(ret) = SwordfishSolver::apply_fish_on_axis(sgrid, unit_type, 3) { return Some(ret) };
+        }
+        None
+    }
+}
 
-        let mut applied = false;
-
+impl SwordfishSolver {
+    pub fn apply_fish_on_axis(sgrid: &SudokuGrid, unit_type: UnitType, fish_size: usize) -> Option<SolverResult> {
+        assert!(fish_size == 3 || fish_size == 4, "Swordfish is fish_size=3 and Jellyfish if fish_size=4. No other types supported.");
         for num in 1..=9 {
-            fn swordfish_for_direction(sgrid: &mut SudokuGrid, num: usize, is_rowwise: bool) -> bool {
-                let mut applied = false;
-                let mut candidates: [HashSet<usize>; 9] = Default::default();
-                
-                for primary in 0..9 {
-                    for secondary in 0..9 {
-                        if is_rowwise && sgrid.candidates[primary][secondary].contains(&num) {
-                            candidates[primary].insert(secondary);
-                        } else if !is_rowwise && sgrid.candidates[secondary][primary].contains(&num) {
-                            candidates[primary].insert(secondary);
+            let mut candidate_positions: [Vec<(usize, usize)>; 9] = Default::default();
+    
+            for unit in SudokuGrid::get_all_units_from_unit_type(unit_type) {
+                for (row, col) in unit {
+                    if sgrid.candidates[row][col].contains(&num) {
+                        match unit_type {
+                            UnitType::Row => { candidate_positions[row].push((row, col)); },
+                            UnitType::Col => { candidate_positions[col].push((row, col)); },
+                            UnitType::Box => panic!("Box unit type does not make sense for a fish"),
                         }
                     }
                 }
-
-                let candidate_count = candidates
-                    .iter()
-                    .filter(|x| x.len() == 2 || x.len() == 3)
-                    .count();
-                if candidate_count < 3 { return false; }
-
-                for primary_indices in (0..9).combinations(3) {
-                    let i = primary_indices[0];
-                    let j = primary_indices[1];
-                    let k = primary_indices[2];
-
-                    let unioned_indices = candidates[i]
-                        .union(&candidates[j])
-                        .copied()
-                        .collect::<HashSet<usize>>()
-                        .union(&candidates[k])
-                        .cloned()
-                        .collect::<HashSet<usize>>();
-
-                    if unioned_indices.len() != 3 { continue; }
-
-                    // We found a swordfish, now find reduction candidates
-                    for secondary in &unioned_indices {
-                        for primary in 0..9 {
-                            if primary == i || primary == j || primary == k { continue; }
-                            if is_rowwise && sgrid.candidates[primary][*secondary].remove(&num) {
-                                applied = true;
-                                println!(
-                                    "Solver [SwordfishSolver:RowSF->ColRem] removed value {} from candidate location ({}, {}). SF {:?} {:?}",
-                                    num, primary, secondary, &primary_indices, &unioned_indices
-                                );
-                            } else if !is_rowwise && sgrid.candidates[*secondary][primary].remove(&num) {
-                                applied = true;
-                                println!(
-                                    "Solver [SwordfishSolver:ColSF->RowRem] removed value {} from candidate location ({}, {}). SF {:?} {:?}",
-                                    num, secondary, primary, &primary_indices, &unioned_indices
-                                );
+            }
+    
+            let possible_cells_for_fish: Vec<Vec<(usize, usize)>> = candidate_positions
+                .iter()
+                .filter(|&x| x.len() >= 2 && x.len() <= fish_size)
+                .cloned()
+                .collect();
+    
+            for unit_set in possible_cells_for_fish.iter().clone().combinations(fish_size) {
+                let mut axis_counter = HashSet::new();
+                for &vec in &unit_set {
+                    for &(row, col) in vec {
+                        match unit_type {
+                            UnitType::Row => { axis_counter.insert(col); },
+                            UnitType::Col => { axis_counter.insert(row); },
+                            UnitType::Box => panic!("Box unit type does not make sense for a fish"),
+                        }
+                    }
+                }
+    
+                if axis_counter.len() != fish_size { continue; }
+    
+                // We have a fish, check for candidate reductions.
+                let mut visualizer_updates = Vec::new();
+                let mut reductions = Vec::new();
+                visualizer_updates.push(VisualizerUpdate::SetTitle(match fish_size {
+                    3 => "Swordfish".to_string(),
+                    4 => "Jellyfish".to_string(),
+                    _ => panic!("Unsupported fish solver amount"),
+                }));
+    
+                for cell_set in &unit_set {
+                    for (row, col) in SudokuGrid::get_cells_in_unit_from(unit_type, cell_set[0]) {
+                        visualizer_updates.push(VisualizerUpdate::ColorCell(row, col, Colors::CELL_USED_TO_DETERMINE_SOLUTION));
+                        if sgrid.candidates[row][col].contains(&num) {
+                            visualizer_updates.push(VisualizerUpdate::ColorCandidate(row, col, num, Colors::DIGIT_USED_TO_DETERMINE_SOLUTION));
+                        }
+                    }
+                }
+    
+                for &cell_set in &unit_set {
+                    for &cell_in_fish in cell_set {
+                        for (row, col) in SudokuGrid::get_cells_in_unit_from(match unit_type {
+                            UnitType::Row => UnitType::Col,
+                            UnitType::Col => UnitType::Row,
+                            UnitType::Box => panic!("Box unit type does not make sense for a fish"),
+                        }, cell_in_fish) {
+                            // Check if the cell is part of the rows or columns used by the fish
+                            match unit_type {
+                                UnitType::Row => {
+                                    if unit_set.iter().any(|set| set[0].0 == row) { continue; }
+                                },
+                                UnitType::Col => {
+                                    if unit_set.iter().any(|set| set[0].1 == col) { continue; }
+                                },
+                                _ => {}
+                            }
+                    
+                            visualizer_updates.push(VisualizerUpdate::ColorCell(row, col, Colors::CELL_MARKED_FOR_CANDIDATE_REMOVEAL));
+                            if sgrid.candidates[row][col].contains(&num) {
+                                visualizer_updates.push(VisualizerUpdate::ColorCandidate(row, col, num, Colors::CANDIDATE_MARKED_FOR_REMOVAL));
+                                reductions.push(SolverAction::CandidateReduction(row, col, num));
                             }
                         }
                     }
                 }
-                applied
+                
+                if !reductions.is_empty() { return Some((reductions, visualizer_updates)); }
             }
-
-            applied |= swordfish_for_direction(sgrid, num, true);  // Row-wise
-            applied |= swordfish_for_direction(sgrid, num, false); // Column-wise
         }
-
-        applied
+        None
     }
 }

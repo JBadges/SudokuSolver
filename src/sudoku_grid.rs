@@ -384,7 +384,7 @@ impl SudokuGrid {
                 for row in box_row..box_row+3 {
                     for col in box_col..box_col+3 {
                         if self.candidates[row][col].contains(&num) {
-                            cords.push((row, col));
+                            cords.push((row, col, num));
                         }
                     }
                 }
@@ -399,7 +399,7 @@ impl SudokuGrid {
             let mut cords = Vec::new();
             for row in 0..9 {
                 if self.candidates[row][col].contains(&num) {
-                    cords.push((row, col));
+                    cords.push((row, col, num));
                 }
             }
             if cords.len() == 2 {
@@ -411,7 +411,7 @@ impl SudokuGrid {
             let mut cords = Vec::new();
             for col in 0..9 {
                 if self.candidates[row][col].contains(&num) {
-                    cords.push((row, col));
+                    cords.push((row, col, num));
                 }
             }
             if cords.len() == 2 {
