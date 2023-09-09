@@ -52,24 +52,24 @@ impl SudokuSolveMethod for XYZWingSolver {
 
                 // XYZ-Wing is form 
                 // hinge => XYZ
-                // wing1 => XY
+                // wing1 => YZ
                 // wing2 => XZ
 
-                // Find X using both wings
-                let x = if let Some(a) = hinge_values.iter().find(|&&value| wing1_candidates.contains(&value) && wing2_candidates.contains(&value)).cloned() { a } else { continue; };
+                // Find Z using both wings
+                let z = if let Some(a) = hinge_values.iter().find(|&&value| wing1_candidates.contains(&value) && wing2_candidates.contains(&value)).cloned() { a } else { continue; };
 
                 // Find Y using wing1
-                let y = if let Some(a) = wing1_candidates.iter().find(|&&value| value != x).cloned() { a } else { continue; };
+                let y = if let Some(a) = wing1_candidates.iter().find(|&&value| value != z).cloned() { a } else { continue; };
 
-                // Find Z using wing2
-                let z = if let Some(a) = wing2_candidates.iter().find(|&&value| value != x).cloned()  { a } else { continue; };
+                // Find X using wing2
+                let x = if let Some(a) = wing2_candidates.iter().find(|&&value| value != z).cloned()  { a } else { continue; };
 
                 assert!(hinge_candidates.contains(&x));
                 assert!(hinge_candidates.contains(&y));
                 assert!(hinge_candidates.contains(&z));
 
-                assert!(wing1_candidates.contains(&x));
                 assert!(wing1_candidates.contains(&y));
+                assert!(wing1_candidates.contains(&z));
 
                 assert!(wing2_candidates.contains(&x));
                 assert!(wing2_candidates.contains(&z));
