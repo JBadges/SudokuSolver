@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use itertools::{iproduct, Itertools};
+use itertools::iproduct;
 use raylib::prelude::Color;
 
 use crate::{sudoku_grid::SudokuGrid, sudoku_visualizer_builder::Colors};
