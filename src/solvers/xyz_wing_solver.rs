@@ -56,11 +56,7 @@ impl SudokuSolveMethod for XYZWingSolver {
                 // wing2 => XZ
 
                 // Find X using both wings
-                let x = hinge_values.iter().find(|&&value| wing1_candidates.contains(&value) && wing2_candidates.contains(&value)).cloned();
-
-                // If X is not found, continue to the next iteration
-                if x.is_none() { continue; }
-                let x = x.unwrap();
+                let x = if let Some(a) = hinge_values.iter().find(|&&value| wing1_candidates.contains(&value) && wing2_candidates.contains(&value)).cloned() { a } else { continue; };
 
                 // Find Y using wing1
                 let y = if let Some(a) = wing1_candidates.iter().find(|&&value| value != x).cloned() { a } else { continue; };
