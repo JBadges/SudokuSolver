@@ -13,6 +13,7 @@ use sudoku_generator::solvers::y_wing_solver::YWingSolver;
 use sudoku_generator::solvers::swordfish_solver::SwordfishSolver;
 use sudoku_generator::solvers::jellyfish_solver::JellyfishSolver;
 use sudoku_generator::solvers::medusa_3d_solver::Medusa3DSolver;
+use sudoku_generator::solvers::bowmans_bingo_solver::BowmansBingoSolver;
 
 fn draw_text_centered(d: &mut RaylibDrawHandle, text: &str, cell_center_x: i32, cell_center_y: i32, text_size: i32, color: Color) {
     let text_width = measure_text(text, text_size);
@@ -46,12 +47,12 @@ fn main() {
     // let swordfish = SudokuGrid::from_string("050030602642895317037020800023504700406000520571962483214000900760109234300240170");
     // let jellyfish = SudokuGrid::from_string("024090008800402900719000240075804300240900587038507604082000059007209003490050000");
     // let medusa_twice_in_a_cell = SudokuGrid::from_string("093824560085600002206075008321769845000258300578040296850016723007082650002507180");
-    // let medusa_twice_in_a_unit = SudokuGrid::from_string("300052000250300010004607523093200805570000030408035060005408300030506084840023056");
+    let medusa_twice_in_a_unit = SudokuGrid::from_string("300052000250300010004607523093200805570000030408035060005408300030506084840023056");
     // let medusa_two_colors_in_a_cell = SudokuGrid::from_string("290000830000020970000109402845761293600000547009045008903407000060030709050000384");
     // let medusa_two_colours_elsewhere = SudokuGrid::from_string("100056003043090000800043002030560210950421037021030000317980005000310970000670301");
-    let medusa_cell_emptied_by_color = SudokuGrid::from_string("986721345304956007007030960073065009690017003100390276000679030069143700731582694");
+    // let medusa_cell_emptied_by_color = SudokuGrid::from_string("986721345304956007007030960073065009690017003100390276000679030069143700731582694");
     
-    let grid = medusa_cell_emptied_by_color;
+    let grid = medusa_twice_in_a_unit;
 
     let mut solver: SudokuSolverManager = SudokuSolverManager::new(grid.clone());
     println!("Sudoku id: {}", grid.to_number_string());
@@ -67,6 +68,7 @@ fn main() {
     solver.add_solver(Box::new(SwordfishSolver));
     solver.add_solver(Box::new(JellyfishSolver));
     solver.add_solver(Box::new(Medusa3DSolver));
+    solver.add_solver(Box::new(BowmansBingoSolver));
 
     let mut iter = 0;
     let mut done = false;
