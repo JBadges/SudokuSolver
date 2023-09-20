@@ -64,6 +64,9 @@ impl SudokuSolveMethod for XYZWingSolver {
                 // Find X using wing2
                 let x = if let Some(a) = wing2_candidates.iter().find(|&&value| value != z).cloned()  { a } else { continue; };
 
+                // An XYZ wing must have all distinct values
+                if x == y || x == z || y == z { continue; }
+
                 assert!(hinge_candidates.contains(&x));
                 assert!(hinge_candidates.contains(&y));
                 assert!(hinge_candidates.contains(&z));
