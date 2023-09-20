@@ -30,8 +30,7 @@ impl NakedSinglesSolver {
         let mut candidate_count: Vec<i32> = vec![0; 10];
         let mut cordinate_of_candidate = vec![(0, 0); 10];
         
-        // Only keep values that are unsolved.
-        for &(row, col) in vals.iter().filter(|&&(row, col)| sgrid.grid[row][col] == 0) {
+        for &(row, col) in vals.iter() {
             for &candidate in &sgrid.candidates[row][col] {
                 candidate_count[candidate] += 1;
                 cordinate_of_candidate[candidate] = (row, col);
@@ -42,6 +41,8 @@ impl NakedSinglesSolver {
         for num in 1..=9 {
             if candidate_count[num] == 1 {
                 let (row, col) = cordinate_of_candidate[num];
+                // Cell is already solved, we dont need to solve it again.
+                if sgrid.grid[row][col] != 0 { continue; }
                 visualizer_updates.push(VisualizerUpdate::ColorDigit(row, col, Colors::SOLVED_DIGIT));
                 reductions.push(SolverAction::DigitSolve(row, col, num));
                 return Some((reductions, visualizer_updates));
