@@ -1,4 +1,5 @@
 use std::fmt;
+use itertools::{iproduct, Itertools};
 use rand::seq::SliceRandom;
 use std::collections::HashSet;
 use super::adjacency_graph::AdjacencyGraph;
@@ -519,6 +520,21 @@ impl SudokuGrid {
                 col_cells
             },
         }
+    }
+
+    // Boxes in 
+    // 1 2 3
+    // 4 5 6
+    // 7 8 9
+    pub fn get_cells_in_box_n(n: usize) -> Vec<(usize, usize)> {
+        let n_index = n - 1;
+        let (bx, by) = ((n_index / 3) * 3, (n_index % 3) * 3);
+        iproduct!(bx..bx+3,by..by+3).collect_vec()
+    }
+
+    pub fn get_box_number_from_cell(cell: (usize, usize)) -> usize {
+        let (row, col) = cell;
+        (row / 3) * 3 + (col / 3) + 1
     }
 
 }

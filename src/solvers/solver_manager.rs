@@ -75,12 +75,11 @@ impl SudokuSolverManager {
             cl.set_title(format!("Post step {}", self.current_step).as_str());
             self.visualizers_per_step.last_mut().unwrap().push(cl);
         }
+
+        assert!(self.sgrid.has_unique_solution(), "After applying solver [{}] we do not have a solution.", &self.visualizers_per_step.last().unwrap()[1].title);
         applied_solver
     }
 
-    // pub fn generate_output_pdf(&self, file_path: &str) {
-
-    // }
 }
 
 

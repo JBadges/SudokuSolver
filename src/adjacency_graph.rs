@@ -108,6 +108,7 @@ impl AdjacencyGraph {
         return ret;
     }
 
+    // Asumes a bipartite graph is given and will panic if not.
     fn bicolor_graph(graph: &AdjacencyGraph, start_node: &(usize, usize, usize)) -> HashMap<(usize, usize, usize), BiColor> {
         let mut colors: HashMap<(usize, usize, usize), BiColor> = HashMap::new();
         let mut queue: VecDeque<(usize, usize, usize)> = VecDeque::new();
