@@ -73,6 +73,9 @@ impl SudokuSolveMethod for YWingSolver {
                     continue;
                 };
 
+                // Y-wings must have all distinct numbers
+                if a == b || a == c || b == c { continue; }
+
                 assert!(hinge_candidates.contains(&a));
                 assert!(hinge_candidates.contains(&b));
 
