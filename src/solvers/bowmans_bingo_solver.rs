@@ -48,7 +48,7 @@ impl SudokuSolveMethod for BowmansBingoSolver {
             // Place the starting candidate face down
             candidate_states.insert((start_row, start_col, start_num), CandidateState::Forced);
 
-            visualizer_updates.push(VisualizerUpdate::ColorCell(start_row, start_col, Colors::CELL_USED_TO_DETERMINE_SOLUTION));
+            visualizer_updates.push(VisualizerUpdate::ColorCell(start_row, start_col, Colors::CELL_MARKED_FOR_CANDIDATE_REMOVEAL));
             visualizer_updates.push(VisualizerUpdate::BackgroundCandidate(start_row, start_col, start_num, Colors::CHAIN_RED));
 
             // Main loop for Bowman's Bingo

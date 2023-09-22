@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+
 use raylib::prelude::*;
 use sudoku_generator::solvers::solver_manager::SudokuSolverManager;
 use sudoku_generator::sudoku_grid::*;
@@ -25,7 +27,7 @@ fn draw_text_centered(d: &mut RaylibDrawHandle, text: &str, cell_center_x: i32, 
 }
 
 
-fn draw_sgrid(canvas_offset_x: i32, canvas_offset_y: i32, canvas_width: i32, canvas_height: i32, draw: &mut RaylibDrawHandle<'_>, builder: &SudokuVisualizerBuilder) {
+fn draw_sgrid(canvas_offset_x: i32, canvas_offset_y: i32, canvas_width: i32, canvas_height: i32, draw: &mut RaylibDrawHandle<'_>, builder: &SudokuVisualizerBuilder, sgrid: &SudokuGrid) {
     let size = std::cmp::min(canvas_width, canvas_height) as f32;
     let offset_x = canvas_offset_x + ((canvas_width as f32 - size) / 2.0) as i32;
     let offset_y = canvas_offset_y + ((canvas_height as f32 - size) / 2.0) as i32;
@@ -33,12 +35,31 @@ fn draw_sgrid(canvas_offset_x: i32, canvas_offset_y: i32, canvas_width: i32, can
     const BORDER_USAGE: f32 = 0.05;
     const LINE_SPACING: f32 = (1.0 - 2.0 * BORDER_USAGE) / 9.0; // 9 segments
     let line_thickness: f32 = 2.0;
+    let chain_thickness: f32 = 2.0;
+    let candidate_text_size = 10;
 
-    // Highlights
+    let get_xy_for_candidate = |row: usize, col: usize, num: usize| -> (f32, f32) {
+        let x_offset = ((num as i32 - 1) % 3 - 1) as f32 * LINE_SPACING * size / 4.0; // 4.0 is a random number that looks nice in the grid.
+        let y_offset = ((num as i32 - 1) / 3 - 1) as f32 * LINE_SPACING * size / 4.0;
+        
+        let cell_center_x = offset_x as f32 + (col as f32 + 1.0) * LINE_SPACING * size + x_offset;
+        let cell_center_y = offset_y as f32 + (row as f32 + 1.0) * LINE_SPACING * size + y_offset;
+    
+        (cell_center_x, cell_center_y)
+    };
+
+    // Highlights - Cell
     for (&(row, col), &color) in &builder.cell_highlights {
         let x = offset_x as f32 + (col + 1) as f32 * LINE_SPACING * size - LINE_SPACING * size / 2.0 + line_thickness / 2.0;
         let y = offset_y as f32 + (row + 1) as f32 * LINE_SPACING * size - LINE_SPACING * size / 2.0 + line_thickness / 2.0;
         draw.draw_rectangle(x as i32, y as i32, (LINE_SPACING * size) as i32, (LINE_SPACING * size) as i32, color);
+    }
+
+    // Highlights - Digit
+    for (&(row, col, num), &color) in &builder.candidates_highlights {
+        let (x, y) = get_xy_for_candidate(row, col, num);
+
+        draw.draw_rectangle(x as i32 - candidate_text_size / 2, y as i32 - candidate_text_size / 2, candidate_text_size, candidate_text_size, color);
     }
 
     for line in [1,2,4,5,7,8,0,3,6,9] { 
@@ -92,33 +113,100 @@ fn draw_sgrid(canvas_offset_x: i32, canvas_offset_y: i32, canvas_width: i32, can
         draw_text_centered(draw, &num.to_string(), cell_center_x as i32, cell_center_y as i32, 40, color);
     }
 
-    let get_xy_for_candidate = |row: usize, col: usize, num: usize| -> (f32, f32) {
-        let x_offset = ((num as i32 - 1) % 3 - 1) as f32 * LINE_SPACING * size / 4.0;
-        let y_offset = ((num as i32 - 1) / 3 - 1) as f32 * LINE_SPACING * size / 4.0;
+    let mut drawn_pairs: HashSet<((usize, usize, usize), (usize, usize, usize))> = Default::default();
+    for (&((row_from, col_from, num_from), (row_to, col_to, num_to)), &color) in &builder.chains {
+        let current_pair = ((row_from, col_from, num_from), (row_to, col_to, num_to));
+        let reversed_pair = ((row_to, col_to, num_to), (row_from, col_from, num_from));
+    
+        if drawn_pairs.contains(&reversed_pair) {
+            continue;
+        }
+    
+        drawn_pairs.insert(current_pair);
+    
+        let a = {
+            let (x, y) = get_xy_for_candidate(row_from, col_from, num_from);
+            Vector2 { x, y }
+        };
+    
+        let b = {
+            let (x, y) = get_xy_for_candidate(row_to, col_to, num_to);
+            Vector2 { x, y }
+        };
+    
+        fn is_point_on_line_segment(a: &Vector2, b: &Vector2, point: &Vector2) -> bool {
+            let cross_product = (point.y - a.y) * (b.x - a.x) - (point.x - a.x) * (b.y - a.y);
+            if cross_product.abs() > f32::EPSILON {
+                return false;
+            }
         
-        let cell_center_x = offset_x as f32 + (col as f32 + 1.0) * LINE_SPACING * size + x_offset;
-        let cell_center_y = offset_y as f32 + (row as f32 + 1.0) * LINE_SPACING * size + y_offset;
-    
-        (cell_center_x, cell_center_y)
-    };
+            let dot_product = (point.x - a.x) * (b.x - a.x) + (point.y - a.y) * (b.y - a.y);
+            if dot_product < 0.0 {
+                return false;
+            }
+        
+            let squared_length = (b.x - a.x) * (b.x - a.x) + (b.y - a.y) * (b.y - a.y);
+            if dot_product > squared_length {
+                return false;
+            }
+        
+            true
+        }
 
-    // Draw chains
-    for (&((row_from, col_from, num_from), (row_to, col_to, num_to)), color) in &builder.chains {
-        let (cell_center_x_from, cell_center_y_from) = get_xy_for_candidate(row_from, col_from, num_from);
-        let (cell_center_x_to, cell_center_y_to) = get_xy_for_candidate(row_to, col_to, num_to);
+        let intersects = (0..9).flat_map(|row| {
+            (0..9).flat_map(move |col| {
+                sgrid.candidates[row][col].iter().filter_map(move |&num| {
+                    if sgrid.grid[row][col] != 0 {
+                        return None;
+                    }
+                    let point = {
+                        let (x, y) = get_xy_for_candidate(row, col, num);
+                        Vector2 { x, y }
+                    };
     
-        let control_point = Vector2::new((cell_center_x_from + cell_center_x_to) as f32 / 2.0 - 0.03125 * size, (cell_center_y_from + cell_center_y_to) as f32 / 2.0 - 0.03125 * size);
-        let start_point = Vector2::new(cell_center_x_from as f32, cell_center_y_from as f32);
-        let end_point = Vector2::new(cell_center_x_to as f32, cell_center_y_to as f32);
+                    if (row, col, num) != (row_from, col_from, num_from) && (row, col, num) != (row_to, col_to, num_to) && is_point_on_line_segment(&a, &b, &point) {
+                        Some(point)
+                    } else {
+                        None
+                    }
+                })
+            })
+        }).next().is_some();
+
+        if !intersects {
+            draw.draw_line_ex(a, b, chain_thickness, color);
+            continue;
+        }
     
-        draw.draw_line_bezier_quad(start_point, end_point, control_point, 2.0, color);
+        let m = (a + b) / 2.0;       
+    
+        let perp = Vector2 {
+            x: - (a.y - b.y),
+            y: a.x - b.x,
+        };
+    
+        let length = perp.length();
+        let perp_normalized = Vector2 {
+            x: perp.x / length,
+            y: perp.y / length,
+        };
+    
+        let distance = ((a.x - b.x).powi(2) + (a.y - b.y).powi(2)).sqrt();
+        let offset = 0.07 * size * (distance / size).min(1.0);
+    
+        let control_point = Vector2 {
+            x: m.x + perp_normalized.x * offset,
+            y: m.y + perp_normalized.y * offset,
+        };
+    
+        draw.draw_line_bezier_quad(a, b, control_point, chain_thickness, color);
     }
 
     // Draw candidates
     for (&(row, col, num), &color) in &builder.candidates {
         let (cell_center_x, cell_center_y) = get_xy_for_candidate(row, col, num);
         
-        draw_text_centered(draw, &num.to_string(), cell_center_x as i32, cell_center_y as i32, 10, color);
+        draw_text_centered(draw, &num.to_string(), cell_center_x as i32, cell_center_y as i32, candidate_text_size, color);
     }
 }
 
@@ -137,7 +225,7 @@ fn main() {
     // let hidden_triple = SudokuGrid::from_string("300000000970010000600583000200000900500621003008000005000435002000090056000000001");
     // let simplest_sudoku = SudokuGrid::from_string("000105000140000670080002400063070010900000003010090520007200080026000035000409000");
     // let intersection_removal = SudokuGrid::from_string("000921003009000060000000500080403006007000800500700040003000000020000700800195000");
-    let xwing = SudokuGrid::from_string("093004560060003140004608309981345000347286951652070483406002890000400010029800034");
+    // let xwing = SudokuGrid::from_string("093004560060003140004608309981345000347286951652070483406002890000400010029800034");
     // let simple_col_2 = SudokuGrid::from_string("123000587005817239987000164051008473390750618708100925076000891530081746810070352");
     // let simple_col_4 = SudokuGrid::from_string("036210840800045631014863009287030456693584000145672398408396000350028064060450083");
     // let swordfish = SudokuGrid::from_string("050030602642895317037020800023504700406000520571962483214000900760109234300240170");
@@ -145,11 +233,11 @@ fn main() {
     // let medusa_twice_in_a_cell = SudokuGrid::from_string("093824560085600002206075008321769845000258300578040296850016723007082650002507180");
     // let medusa_twice_in_a_unit = SudokuGrid::from_string("300052000250300010004607523093200805570000030408035060005408300030506084840023056");
     // let medusa_two_colors_in_a_cell = SudokuGrid::from_string("290000830000020970000109402845761293600000547009045008903407000060030709050000384");
-    // let medusa_two_colours_elsewhere = SudokuGrid::from_string("100056003043090000800043002030560210950421037021030000317980005000310970000670301");
+    let medusa_two_colours_elsewhere = SudokuGrid::from_string("100056003043090000800043002030560210950421037021030000317980005000310970000670301");
     // let medusa_cell_emptied_by_color = SudokuGrid::from_string("986721345304956007007030960073065009690017003100390276000679030069143700731582694");
     // let xyz_wing = SudokuGrid::from_string("092001750500200008000030200075004960200060075069700030008090020700003089903800040");
     
-    let grid = xwing;
+    let grid = medusa_two_colours_elsewhere;
 
     let mut solver: SudokuSolverManager = SudokuSolverManager::new(grid.clone());
     println!("Sudoku id: {}", grid.to_number_string());
@@ -181,9 +269,9 @@ fn main() {
         let screen_height = d.get_screen_height();
         let header_pixles = HEADER_SPACING * screen_height as f32;
         // Draw title
-        draw_text_centered(&mut d, &builder.title, screen_width / 2, (header_pixles / 2.0) as i32, (1.0 * header_pixles) as i32, Color::BLACK);
+        draw_text_centered(&mut d, &builder.title, screen_width / 2, (header_pixles / 2.0) as i32, (0.8 * header_pixles) as i32, Color::BLACK);
     
-        draw_sgrid(0,header_pixles as i32, screen_width, (screen_height as f32 - header_pixles) as i32, &mut d, builder);
+        draw_sgrid(0,header_pixles as i32, screen_width, (screen_height as f32 - header_pixles) as i32, &mut d, builder, &solver.sgrid);
         
         if d.is_key_pressed(KeyboardKey::KEY_SPACE) && !done {
             if iter == 2 {
