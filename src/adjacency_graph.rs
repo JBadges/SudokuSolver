@@ -30,7 +30,10 @@ impl AdjacencyGraph {
     }
 
     // Returns a list of neighbors for a given node.
-    pub fn neighbors(&self, node: (usize, usize, usize)) -> Option<&HashSet<(usize, usize, usize)>> {
+    pub fn neighbors(
+        &self,
+        node: (usize, usize, usize),
+    ) -> Option<&HashSet<(usize, usize, usize)>> {
         self.edges.get(&node)
     }
 
@@ -38,7 +41,10 @@ impl AdjacencyGraph {
         self.edges.keys().cloned().collect()
     }
 
-    pub fn remove_cell(&mut self, node: (usize, usize, usize)) -> Option<HashSet<(usize, usize, usize)>> {
+    pub fn remove_cell(
+        &mut self,
+        node: (usize, usize, usize),
+    ) -> Option<HashSet<(usize, usize, usize)>> {
         self.edges.remove(&node)
     }
 
@@ -51,29 +57,38 @@ impl AdjacencyGraph {
     }
 
     pub fn merge_on_bivalue(&mut self, mut other: AdjacencyGraph, sgrid: &SudokuGrid) {
-        let self_bivalued_nodes: Vec<(usize, usize, usize)> = self.nodes()
+        let self_bivalued_nodes: Vec<(usize, usize, usize)> = self
+            .nodes()
             .into_iter()
             .filter(|&(row, col, _)| sgrid.candidates[row][col].len() == 2)
             .collect();
-        let other_bivalued_nodes: Vec<(usize, usize, usize)> = other.nodes()
-        .into_iter()
-        .filter(|&(row, col, _)| sgrid.candidates[row][col].len() == 2)
-        .collect();
+        let other_bivalued_nodes: Vec<(usize, usize, usize)> = other
+            .nodes()
+            .into_iter()
+            .filter(|&(row, col, _)| sgrid.candidates[row][col].len() == 2)
+            .collect();
 
         for &self_node in &self_bivalued_nodes {
             for &other_node in &other_bivalued_nodes {
                 let (self_row, self_col, self_num) = self_node;
                 let (other_row, other_col, other_num) = other_node;
 
-                if (self_row, self_col) != (other_row, other_col) { continue; }
-                if self_num == other_num { continue; }
+                if (self_row, self_col) != (other_row, other_col) {
+                    continue;
+                }
+                if self_num == other_num {
+                    continue;
+                }
 
                 self.add_edge(self_node, other_node);
             }
         }
 
         for (node, neighbors) in other.edges.drain() {
-            self.edges.entry(node).or_insert_with(HashSet::new).extend(neighbors);
+            self.edges
+                .entry(node)
+                .or_insert_with(HashSet::new)
+                .extend(neighbors);
         }
 
         // Hacky way to include an edge between bivalued cell with no conjugate pair
@@ -84,14 +99,20 @@ impl AdjacencyGraph {
                 let &value1 = map_iter.next().unwrap();
                 let &value2 = map_iter.next().unwrap();
 
-                self.edges.entry((row, col, value1)).or_insert_with(HashSet::new).insert((row, col, value2));
-                self.edges.entry((row, col, value2)).or_insert_with(HashSet::new).insert((row, col, value1));
+                self.edges
+                    .entry((row, col, value1))
+                    .or_insert_with(HashSet::new)
+                    .insert((row, col, value2));
+                self.edges
+                    .entry((row, col, value2))
+                    .or_insert_with(HashSet::new)
+                    .insert((row, col, value1));
             }
         }
     }
 
     pub fn bicolor_graphs(graph: &AdjacencyGraph) -> Vec<HashMap<(usize, usize, usize), BiColor>> {
-        let mut ret:Vec<HashMap<(usize, usize, usize), BiColor>> = Vec::new();
+        let mut ret: Vec<HashMap<(usize, usize, usize), BiColor>> = Vec::new();
         for node in graph.nodes() {
             let mut found = false;
             for colored_graph in &ret {
@@ -109,7 +130,10 @@ impl AdjacencyGraph {
     }
 
     // Asumes a bipartite graph is given and will panic if not.
-    fn bicolor_graph(graph: &AdjacencyGraph, start_node: &(usize, usize, usize)) -> HashMap<(usize, usize, usize), BiColor> {
+    fn bicolor_graph(
+        graph: &AdjacencyGraph,
+        start_node: &(usize, usize, usize),
+    ) -> HashMap<(usize, usize, usize), BiColor> {
         let mut colors: HashMap<(usize, usize, usize), BiColor> = HashMap::new();
         let mut queue: VecDeque<(usize, usize, usize)> = VecDeque::new();
 

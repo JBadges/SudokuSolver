@@ -1,11 +1,10 @@
-use std::collections::HashMap;
 use crate::sudoku_grid::SudokuGrid;
 use raylib::prelude::*;
+use std::collections::HashMap;
 
 type Coordinate = (usize, usize);
 type CandidateCoordinate = (usize, usize, usize);
 type Chain = (CandidateCoordinate, CandidateCoordinate);
-
 
 pub struct Colors;
 
@@ -41,7 +40,7 @@ pub struct SudokuVisualizerBuilder {
     pub cell_highlights: HashMap<Coordinate, Color>,
 
     pub chains: HashMap<Chain, Color>,
-    pub title: String, 
+    pub title: String,
 }
 
 impl SudokuVisualizerBuilder {
@@ -63,10 +62,14 @@ impl SudokuVisualizerBuilder {
         for row in 0..9 {
             for col in 0..9 {
                 if sgrid.grid[row][col] != 0 {
-                    visualizer.digits.insert((row, col), (sgrid.grid[row][col], Color::GRAY));
+                    visualizer
+                        .digits
+                        .insert((row, col), (sgrid.grid[row][col], Color::GRAY));
                 } else {
                     for candidate in &sgrid.candidates[row][col] {
-                        visualizer.candidates.insert((row, col, *candidate), Color::BLACK);
+                        visualizer
+                            .candidates
+                            .insert((row, col, *candidate), Color::BLACK);
                     }
                 }
             }
@@ -94,8 +97,19 @@ impl SudokuVisualizerBuilder {
         self.cell_highlights.insert((row, col), color);
     }
 
-    pub fn add_chain(&mut self, row_from: usize, col_from: usize, num_from: usize, row_to: usize, col_to: usize, num_to: usize, color: Color) {
-        self.chains.insert(((row_from, col_from, num_from), (row_to, col_to, num_to)), color);
+    pub fn add_chain(
+        &mut self,
+        row_from: usize,
+        col_from: usize,
+        num_from: usize,
+        row_to: usize,
+        col_to: usize,
+        num_to: usize,
+        color: Color,
+    ) {
+        self.chains.insert(
+            ((row_from, col_from, num_from), (row_to, col_to, num_to)),
+            color,
+        );
     }
-
 }

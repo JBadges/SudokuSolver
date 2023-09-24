@@ -1,33 +1,47 @@
 use std::collections::HashSet;
 
 use raylib::prelude::*;
-use sudoku_generator::solvers::solver_manager::SudokuSolverManager;
-use sudoku_generator::solvers::x_chain_solver::XChainSolver;
-use sudoku_generator::sudoku_grid::*;
-use sudoku_generator::solvers::single_candidate_solver::SingleCandidateSolver;
-use sudoku_generator::solvers::naked_singles_solver::NakedSinglesSolver;
-use sudoku_generator::solvers::naked_candidates_solver::NakedCandidatesSolver;
+use sudoku_generator::solvers::bowmans_bingo_solver::BowmansBingoSolver;
 use sudoku_generator::solvers::hidden_candidates_solver::HiddenCandidatesSolver;
 use sudoku_generator::solvers::intersection_removal_solver::IntersectionRemovalSolver;
-use sudoku_generator::solvers::x_wing_solver::XWingSolver;
-use sudoku_generator::solvers::singles_chains_solver::SinglesChainsSolver;
-use sudoku_generator::solvers::y_wing_solver::YWingSolver;
-use sudoku_generator::solvers::swordfish_solver::SwordfishSolver;
-use sudoku_generator::solvers::xyz_wing_solver::XYZWingSolver;
 use sudoku_generator::solvers::medusa_3d_solver::Medusa3DSolver;
-use sudoku_generator::solvers::bowmans_bingo_solver::BowmansBingoSolver;
+use sudoku_generator::solvers::naked_candidates_solver::NakedCandidatesSolver;
+use sudoku_generator::solvers::naked_singles_solver::NakedSinglesSolver;
+use sudoku_generator::solvers::single_candidate_solver::SingleCandidateSolver;
+use sudoku_generator::solvers::singles_chains_solver::SinglesChainsSolver;
+use sudoku_generator::solvers::solver_manager::SudokuSolverManager;
+use sudoku_generator::solvers::swordfish_solver::SwordfishSolver;
+use sudoku_generator::solvers::x_chain_solver::XChainSolver;
+use sudoku_generator::solvers::x_wing_solver::XWingSolver;
+use sudoku_generator::solvers::xyz_wing_solver::XYZWingSolver;
+use sudoku_generator::solvers::y_wing_solver::YWingSolver;
+use sudoku_generator::sudoku_grid::*;
 use sudoku_generator::sudoku_visualizer_builder::SudokuVisualizerBuilder;
 
-fn draw_text_centered(d: &mut RaylibDrawHandle, text: &str, cell_center_x: i32, cell_center_y: i32, text_size: i32, color: Color) {
+fn draw_text_centered(
+    d: &mut RaylibDrawHandle,
+    text: &str,
+    cell_center_x: i32,
+    cell_center_y: i32,
+    text_size: i32,
+    color: Color,
+) {
     let text_width = measure_text(text, text_size);
-    let text_height = text_size;  // Approximation, should be fine for digits
+    let text_height = text_size; // Approximation, should be fine for digits
     let x = cell_center_x - text_width / 2;
     let y = cell_center_y - text_height / 2;
     d.draw_text(text, x, y, text_size, color);
 }
 
-
-fn draw_sgrid(canvas_offset_x: i32, canvas_offset_y: i32, canvas_width: i32, canvas_height: i32, draw: &mut RaylibDrawHandle<'_>, builder: &SudokuVisualizerBuilder, sgrid: &SudokuGrid) {
+fn draw_sgrid(
+    canvas_offset_x: i32,
+    canvas_offset_y: i32,
+    canvas_width: i32,
+    canvas_height: i32,
+    draw: &mut RaylibDrawHandle<'_>,
+    builder: &SudokuVisualizerBuilder,
+    sgrid: &SudokuGrid,
+) {
     let size = std::cmp::min(canvas_width, canvas_height) as f32;
     let offset_x = canvas_offset_x + ((canvas_width as f32 - size) / 2.0) as i32;
     let offset_y = canvas_offset_y + ((canvas_height as f32 - size) / 2.0) as i32;
@@ -41,28 +55,44 @@ fn draw_sgrid(canvas_offset_x: i32, canvas_offset_y: i32, canvas_width: i32, can
     let get_xy_for_candidate = |row: usize, col: usize, num: usize| -> (f32, f32) {
         let x_offset = ((num as i32 - 1) % 3 - 1) as f32 * LINE_SPACING * size / 4.0; // 4.0 is a random number that looks nice in the grid.
         let y_offset = ((num as i32 - 1) / 3 - 1) as f32 * LINE_SPACING * size / 4.0;
-        
+
         let cell_center_x = offset_x as f32 + (col as f32 + 1.0) * LINE_SPACING * size + x_offset;
         let cell_center_y = offset_y as f32 + (row as f32 + 1.0) * LINE_SPACING * size + y_offset;
-    
+
         (cell_center_x, cell_center_y)
     };
 
     // Highlights - Cell
     for (&(row, col), &color) in &builder.cell_highlights {
-        let x = offset_x as f32 + (col + 1) as f32 * LINE_SPACING * size - LINE_SPACING * size / 2.0 + line_thickness / 2.0;
-        let y = offset_y as f32 + (row + 1) as f32 * LINE_SPACING * size - LINE_SPACING * size / 2.0 + line_thickness / 2.0;
-        draw.draw_rectangle(x as i32, y as i32, (LINE_SPACING * size) as i32, (LINE_SPACING * size) as i32, color);
+        let x = offset_x as f32 + (col + 1) as f32 * LINE_SPACING * size
+            - LINE_SPACING * size / 2.0
+            + line_thickness / 2.0;
+        let y = offset_y as f32 + (row + 1) as f32 * LINE_SPACING * size
+            - LINE_SPACING * size / 2.0
+            + line_thickness / 2.0;
+        draw.draw_rectangle(
+            x as i32,
+            y as i32,
+            (LINE_SPACING * size) as i32,
+            (LINE_SPACING * size) as i32,
+            color,
+        );
     }
 
     // Highlights - Digit
     for (&(row, col, num), &color) in &builder.candidates_highlights {
         let (x, y) = get_xy_for_candidate(row, col, num);
 
-        draw.draw_rectangle(x as i32 - candidate_text_size / 2, y as i32 - candidate_text_size / 2, candidate_text_size, candidate_text_size, color);
+        draw.draw_rectangle(
+            x as i32 - candidate_text_size / 2,
+            y as i32 - candidate_text_size / 2,
+            candidate_text_size,
+            candidate_text_size,
+            color,
+        );
     }
 
-    for line in [1,2,4,5,7,8,0,3,6,9] { 
+    for line in [1, 2, 4, 5, 7, 8, 0, 3, 6, 9] {
         let color = if line % 3 == 0 {
             Color::BLACK
         } else {
@@ -73,18 +103,30 @@ fn draw_sgrid(canvas_offset_x: i32, canvas_offset_y: i32, canvas_width: i32, can
 
         // Draw horizontal lines
         draw.draw_line_ex(
-            Vector2 { x: (BORDER_USAGE * size + offset_x as f32), y: (offset + offset_y as f32) }, 
-            Vector2 { x: ((1.0 - BORDER_USAGE) * size + offset_x as f32), y: (offset + offset_y as f32) }, 
+            Vector2 {
+                x: (BORDER_USAGE * size + offset_x as f32),
+                y: (offset + offset_y as f32),
+            },
+            Vector2 {
+                x: ((1.0 - BORDER_USAGE) * size + offset_x as f32),
+                y: (offset + offset_y as f32),
+            },
             line_thickness,
-            color
+            color,
         );
 
         // Draw vertical lines
         draw.draw_line_ex(
-            Vector2 { x: (offset + offset_x as f32), y: (BORDER_USAGE * size + offset_y as f32) },
-            Vector2 { x: (offset + offset_x as f32), y: ((1.0 - BORDER_USAGE) * size + offset_y as f32) },
+            Vector2 {
+                x: (offset + offset_x as f32),
+                y: (BORDER_USAGE * size + offset_y as f32),
+            },
+            Vector2 {
+                x: (offset + offset_x as f32),
+                y: ((1.0 - BORDER_USAGE) * size + offset_y as f32),
+            },
             line_thickness,
-            color
+            color,
         );
     }
 
@@ -93,123 +135,170 @@ fn draw_sgrid(canvas_offset_x: i32, canvas_offset_y: i32, canvas_width: i32, can
         let x_left = offset_x as f32 + (BORDER_USAGE * size) / 2.0;
         let x_right = offset_x as f32 + (1.0 - BORDER_USAGE) * size + (BORDER_USAGE * size) / 2.0;
         let y = offset_y as f32 + (i as f32 + 1.0) * LINE_SPACING * size;
-        draw_text_centered(draw, &name.to_string(), x_left as i32, y as i32, 20, Color::BLACK);
-        draw_text_centered(draw, &name.to_string(), x_right as i32, y as i32, 20, Color::BLACK);
+        draw_text_centered(
+            draw,
+            &name.to_string(),
+            x_left as i32,
+            y as i32,
+            20,
+            Color::BLACK,
+        );
+        draw_text_centered(
+            draw,
+            &name.to_string(),
+            x_right as i32,
+            y as i32,
+            20,
+            Color::BLACK,
+        );
     }
-
 
     for i in 1..=9 {
         let x = offset_x as f32 + i as f32 * LINE_SPACING * size;
         let y_top = offset_y as f32 + (BORDER_USAGE * size) / 2.0;
         let y_bot = offset_y as f32 + (1.0 - BORDER_USAGE) * size + (BORDER_USAGE * size) / 2.0;
-        draw_text_centered(draw, &i.to_string(), x as i32, y_top as i32, 20, Color::BLACK);
-        draw_text_centered(draw, &i.to_string(), x as i32, y_bot as i32, 20, Color::BLACK);
+        draw_text_centered(
+            draw,
+            &i.to_string(),
+            x as i32,
+            y_top as i32,
+            20,
+            Color::BLACK,
+        );
+        draw_text_centered(
+            draw,
+            &i.to_string(),
+            x as i32,
+            y_bot as i32,
+            20,
+            Color::BLACK,
+        );
     }
 
     // Draw digits
     for (&(row, col), &(num, color)) in &builder.digits {
         let cell_center_x = offset_x as f32 + (col as f32 + 1.0) * LINE_SPACING * size;
         let cell_center_y = offset_y as f32 + (row as f32 + 1.0) * LINE_SPACING * size;
-        draw_text_centered(draw, &num.to_string(), cell_center_x as i32, cell_center_y as i32, 40, color);
+        draw_text_centered(
+            draw,
+            &num.to_string(),
+            cell_center_x as i32,
+            cell_center_y as i32,
+            40,
+            color,
+        );
     }
 
-    let mut drawn_pairs: HashSet<((usize, usize, usize), (usize, usize, usize))> = Default::default();
+    let mut drawn_pairs: HashSet<((usize, usize, usize), (usize, usize, usize))> =
+        Default::default();
     for (&((row_from, col_from, num_from), (row_to, col_to, num_to)), &color) in &builder.chains {
         let current_pair = ((row_from, col_from, num_from), (row_to, col_to, num_to));
         let reversed_pair = ((row_to, col_to, num_to), (row_from, col_from, num_from));
-    
+
         if drawn_pairs.contains(&reversed_pair) {
             continue;
         }
-    
+
         drawn_pairs.insert(current_pair);
-    
+
         let a = {
             let (x, y) = get_xy_for_candidate(row_from, col_from, num_from);
             Vector2 { x, y }
         };
-    
+
         let b = {
             let (x, y) = get_xy_for_candidate(row_to, col_to, num_to);
             Vector2 { x, y }
         };
-    
+
         fn is_point_on_line_segment(a: &Vector2, b: &Vector2, point: &Vector2) -> bool {
             let cross_product = (point.y - a.y) * (b.x - a.x) - (point.x - a.x) * (b.y - a.y);
             if cross_product.abs() > f32::EPSILON {
                 return false;
             }
-        
+
             let dot_product = (point.x - a.x) * (b.x - a.x) + (point.y - a.y) * (b.y - a.y);
             if dot_product < 0.0 {
                 return false;
             }
-        
+
             let squared_length = (b.x - a.x) * (b.x - a.x) + (b.y - a.y) * (b.y - a.y);
             if dot_product > squared_length {
                 return false;
             }
-        
+
             true
         }
 
-        let intersects = (0..9).flat_map(|row| {
-            (0..9).flat_map(move |col| {
-                sgrid.candidates[row][col].iter().filter_map(move |&num| {
-                    if sgrid.grid[row][col] != 0 {
-                        return None;
-                    }
-                    let point = {
-                        let (x, y) = get_xy_for_candidate(row, col, num);
-                        Vector2 { x, y }
-                    };
-    
-                    if (row, col, num) != (row_from, col_from, num_from) && (row, col, num) != (row_to, col_to, num_to) && is_point_on_line_segment(&a, &b, &point) {
-                        Some(point)
-                    } else {
-                        None
-                    }
+        let intersects = (0..9)
+            .flat_map(|row| {
+                (0..9).flat_map(move |col| {
+                    sgrid.candidates[row][col].iter().filter_map(move |&num| {
+                        if sgrid.grid[row][col] != 0 {
+                            return None;
+                        }
+                        let point = {
+                            let (x, y) = get_xy_for_candidate(row, col, num);
+                            Vector2 { x, y }
+                        };
+
+                        if (row, col, num) != (row_from, col_from, num_from)
+                            && (row, col, num) != (row_to, col_to, num_to)
+                            && is_point_on_line_segment(&a, &b, &point)
+                        {
+                            Some(point)
+                        } else {
+                            None
+                        }
+                    })
                 })
             })
-        }).next().is_some();
+            .next()
+            .is_some();
 
         if !intersects {
             draw.draw_line_ex(a, b, chain_thickness, color);
             continue;
         }
-    
-        let m = (a + b) / 2.0;       
-    
+
+        let m = (a + b) / 2.0;
+
         let perp = Vector2 {
-            x: - (a.y - b.y),
+            x: -(a.y - b.y),
             y: a.x - b.x,
         };
-    
+
         let length = perp.length();
         let perp_normalized = Vector2 {
             x: perp.x / length,
             y: perp.y / length,
         };
-    
+
         let distance = ((a.x - b.x).powi(2) + (a.y - b.y).powi(2)).sqrt();
         let offset = 0.07 * size * (distance / size).min(1.0);
-    
+
         let control_point = Vector2 {
             x: m.x + perp_normalized.x * offset,
             y: m.y + perp_normalized.y * offset,
         };
-    
+
         draw.draw_line_bezier_quad(a, b, control_point, chain_thickness, color);
     }
 
     // Draw candidates
     for (&(row, col, num), &color) in &builder.candidates {
         let (cell_center_x, cell_center_y) = get_xy_for_candidate(row, col, num);
-        
-        draw_text_centered(draw, &num.to_string(), cell_center_x as i32, cell_center_y as i32, candidate_text_size, color);
+
+        draw_text_centered(
+            draw,
+            &num.to_string(),
+            cell_center_x as i32,
+            cell_center_y as i32,
+            candidate_text_size,
+            color,
+        );
     }
 }
-
 
 fn main() {
     #[cfg(feature = "profiling")]
@@ -242,7 +331,9 @@ fn main() {
     // let medusa_cell_emptied_by_color = SudokuGrid::from_string("986721345304956007007030960073065009690017003100390276000679030069143700731582694");
     // let xyz_wing = SudokuGrid::from_string("092001750500200008000030200075004960200060075069700030008090020700003089903800040");
     // let x_chain_1 = SudokuGrid::from_string("000351780857629341100874002509162804681040200000008160718000020000010008060080017");
-    let x_chain_2 = SudokuGrid::from_string("700054010063870425504000700270400001400920007000007542852043079390782054047590283");
+    let x_chain_2 = SudokuGrid::from_string(
+        "700054010063870425504000700270400001400920007000007542852043079390782054047590283",
+    );
     let grid = x_chain_2;
 
     let mut solver: SudokuSolverManager = SudokuSolverManager::new(grid.clone());
@@ -280,11 +371,26 @@ fn main() {
         let screen_height = d.get_screen_height();
         let header_pixles = HEADER_SPACING * screen_height as f32;
         // Draw title
-        draw_text_centered(&mut d, &builder.title, screen_width / 2, (header_pixles / 2.0) as i32, (0.8 * header_pixles) as i32, Color::BLACK);
-    
-        draw_sgrid(0,header_pixles as i32, screen_width, (screen_height as f32 - header_pixles) as i32, &mut d, builder, &solver.sgrid);
-        
-        if PROFILING && done { 
+        draw_text_centered(
+            &mut d,
+            &builder.title,
+            screen_width / 2,
+            (header_pixles / 2.0) as i32,
+            (0.8 * header_pixles) as i32,
+            Color::BLACK,
+        );
+
+        draw_sgrid(
+            0,
+            header_pixles as i32,
+            screen_width,
+            (screen_height as f32 - header_pixles) as i32,
+            &mut d,
+            builder,
+            &solver.sgrid,
+        );
+
+        if PROFILING && done {
             break;
         }
 

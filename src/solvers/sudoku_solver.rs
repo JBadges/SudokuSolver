@@ -4,7 +4,7 @@ use crate::sudoku_grid::SudokuGrid;
 
 pub enum SolverAction {
     CandidateReduction(usize, usize, usize),
-    DigitSolve(usize, usize, usize)
+    DigitSolve(usize, usize, usize),
 }
 
 pub enum VisualizerUpdate {
@@ -21,4 +21,3 @@ pub type SolverResult = (Vec<SolverAction>, Vec<VisualizerUpdate>);
 pub trait SudokuSolveMethod {
     fn apply(&self, sgrid: &SudokuGrid) -> Option<SolverResult>;
 }
-
