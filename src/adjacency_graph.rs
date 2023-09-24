@@ -139,4 +139,22 @@ impl AdjacencyGraph {
 
         colors
     }
+
+    pub fn to_unique_pairs(&self) -> Vec<((usize, usize, usize), (usize, usize, usize))> {
+        let mut pairs = HashSet::new();
+
+        for (key, values) in &self.edges {
+            for value in values {
+                // Ensure uniqueness regardless of the order of the pair
+                let pair = if key < value {
+                    (*key, *value)
+                } else {
+                    (*value, *key)
+                };
+                pairs.insert(pair);
+            }
+        }
+
+        pairs.into_iter().collect()
+    }
 }
