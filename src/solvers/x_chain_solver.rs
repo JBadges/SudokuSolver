@@ -1,6 +1,6 @@
-use itertools::Itertools;
+use std::collections::{HashMap, HashSet};
 
-use crate::{sudoku_grid::SudokuGrid, sudoku_visualizer_builder::Colors};
+use crate::{sudoku_grid::SudokuGrid, sudoku_visualizer_builder::Colors, adjacency_graph::AdjacencyGraph};
 
 use super::sudoku_solver::{SolverAction::*, SolverResult, SudokuSolveMethod, VisualizerUpdate::*};
 
@@ -13,114 +13,36 @@ impl SudokuSolveMethod for XChainSolver {
     fn apply(&self, sgrid: &SudokuGrid) -> Option<SolverResult> {
         for chain_length in (3..=9).step_by(2) {
             for num in 1..=9 {
-                let conjugate_pairs = sgrid.get_conjugate_pairs(num).to_unique_pairs();
-
-                for pair in &conjugate_pairs {
-                    for conjugate_pairs_arrangement in &conjugate_pairs
+                let mut conjugate_pairs: crate::adjacency_graph::AdjacencyGraph = sgrid.get_conjugate_pairs(num);
+                let mut is_strong_link: HashMap<((usize, usize, usize), (usize, usize, usize)), bool> = conjugate_pairs.edges.iter()
+                    .flat_map(|(&key, ends)| ends
                         .iter()
-                        .cloned()
-                        .permutations(conjugate_pairs.len())
-                        .collect::<Vec<Vec<((usize, usize, usize), (usize, usize, usize))>>>()
-                    {
-                        let mut chain = vec![pair.0, pair.1];
-                        let mut link_is_strong = vec![true];
+                        .map(move |&link| ((key, link), true)))
+                    .collect();
 
-                        while chain.len() < chain_length {
-                            let mut extended = false;
-                            let start_of_chain = chain.first().unwrap();
-                            let end_of_chain = chain.last().unwrap();
-
-                            // Extract row and col from the tuple
-                            let start_coords = (start_of_chain.0, start_of_chain.1);
-                            let end_coords = (end_of_chain.0, end_of_chain.1);
-
-                            // Check if the start of the chain can see another end of a conjugate pair
-                            for other_pair in conjugate_pairs_arrangement {
-                                if chain.contains(&other_pair.0) && chain.contains(&other_pair.1) {
-                                    continue;
-                                }
-                                // Strong->Strong
-                                if chain.last().unwrap() == &other_pair.0 {
-                                    chain.push(other_pair.1);
-                                    link_is_strong.push(true);
-                                    extended = true;
-                                    break;
-                                } else if chain.last().unwrap() == &other_pair.1 {
-                                    chain.push(other_pair.0);
-                                    link_is_strong.push(true);
-                                    extended = true;
-                                    break;
-                                } else if chain.first().unwrap() == &other_pair.0 {
-                                    chain.insert(0, other_pair.1);
-                                    link_is_strong.push(true);
-                                    extended = true;
-                                    break;
-                                } else if chain.first().unwrap() == &other_pair.1 {
-                                    chain.insert(0, other_pair.0);
-                                    link_is_strong.push(true);
-                                    extended = true;
-                                    break;
-                                }
-
-                                // Strong->Weak->Strong
-                                let other_pair_start_coords = (other_pair.0 .0, other_pair.0 .1);
-                                let other_pair_end_coords = (other_pair.1 .0, other_pair.1 .1);
-
-                                if SudokuGrid::cells_see_each_other(
-                                    start_coords,
-                                    other_pair_start_coords,
-                                ) {
-                                    chain.insert(0, other_pair.0);
-                                    chain.insert(0, other_pair.1);
-                                    link_is_strong.push(false);
-                                    link_is_strong.push(true);
-                                    extended = true;
-                                    break;
-                                } else if SudokuGrid::cells_see_each_other(
-                                    start_coords,
-                                    other_pair_end_coords,
-                                ) {
-                                    chain.insert(0, other_pair.1);
-                                    chain.insert(0, other_pair.0);
-                                    link_is_strong.push(false);
-                                    link_is_strong.push(true);
-                                    extended = true;
-                                    break;
-                                }
-
-                                if SudokuGrid::cells_see_each_other(
-                                    end_coords,
-                                    other_pair_start_coords,
-                                ) {
-                                    chain.push(other_pair.0);
-                                    chain.push(other_pair.1);
-                                    link_is_strong.push(false);
-                                    link_is_strong.push(true);
-                                    extended = true;
-                                    break;
-                                } else if SudokuGrid::cells_see_each_other(
-                                    end_coords,
-                                    other_pair_end_coords,
-                                ) {
-                                    chain.push(other_pair.1);
-                                    chain.push(other_pair.0);
-                                    link_is_strong.push(false);
-                                    link_is_strong.push(true);
-                                    extended = true;
-                                    break;
-                                }
-                            }
-
-                            if !extended {
-                                break;
-                            }
+                
+                // Construct the full adjacency graph from only strong links to include all weak links
+                let keys: Vec<_> = conjugate_pairs.edges.keys().cloned().collect();
+                for key in keys {
+                    for (row, col) in SudokuGrid::generate_cells_seen_from_cord((key.0, key.1)) {
+                        if sgrid.candidates[row][col].contains(&num) {
+                            if !conjugate_pairs.edges.get(&key).map_or(false, |neighbors| neighbors.contains(&(row, col, num))) {
+                                conjugate_pairs.add_edge(key, (row, col, num));
+                                is_strong_link.insert((key, (row, col, num)), false);
+                                is_strong_link.insert(((row, col, num), key), false);
+                            }                                                    
                         }
+                    }
+                }
 
-                        if chain.len() != chain_length + 1 {
-                            continue;
-                        }
-
-                        // An x_chain works if the two ends of the chain can see cells of each other
+                // Go through the graph starting with only strong links and either going strong->strong or strong->weak->strong for a length of CHAIN_LENGTH
+                for start_node in is_strong_link.iter().filter(|&(_, &value)| value).flat_map(|(&key, _)| vec![key.0, key.1]) {
+                    let chains = XChainSolver::find_chains_from_node(start_node, &conjugate_pairs, &is_strong_link, chain_length + 1);
+                    for chain in chains {
+                        let mut viualizer_updates = Vec::new();
+                        let mut reductions = Vec::new();
+                        debug_assert!(chain_length == chain.len() - 1, "Chain found and chain length aren't the same.");
+                        viualizer_updates.push(SetTitle(format!("X-Chain length {}", chain.len() - 1)));
                         let first = chain.first().unwrap();
                         let last = chain.last().unwrap();
                         let cells_to_check: Vec<(usize, usize)> =
@@ -130,11 +52,6 @@ impl SudokuSolveMethod for XChainSolver {
                                 )))
                                 .cloned()
                                 .collect();
-
-                        let mut viualizer_updates = Vec::new();
-                        viualizer_updates
-                            .push(SetTitle(format!("X-Chain length {}", chain_length)));
-                        let mut reductions = Vec::new();
                         for (row, col) in cells_to_check {
                             if chain.contains(&(row, col, num)) {
                                 continue;
@@ -167,9 +84,10 @@ impl SudokuSolveMethod for XChainSolver {
                                 candidate_color,
                             ));
                             if i != chain.len() - 1 {
-                                let chain_color = match link_is_strong[i] {
-                                    true => Colors::CHAIN_STRONG,
-                                    false => Colors::CHAIN_WEAK,
+                                let chain_color = match is_strong_link.get(&(chain[i], chain[i+1])) {
+                                    Some(true) => Colors::CHAIN_STRONG,
+                                    Some(false) => Colors::CHAIN_WEAK,
+                                    _ => panic!("This shouldn't be possible.")
                                 };
                                 viualizer_updates.push(CreateChain(
                                     chain[i].0,
@@ -183,14 +101,84 @@ impl SudokuSolveMethod for XChainSolver {
                             }
                         }
 
-                        if !reductions.is_empty() {
-                            println!("{:?}", chain);
-                            return Some((reductions, viualizer_updates));
-                        }
+                        if !reductions.is_empty() { return Some((reductions, viualizer_updates)); }
                     }
                 }
             }
         }
         None
     }
+}
+impl XChainSolver {
+    fn find_chains_from_node(
+        start_node: (usize, usize, usize),
+        conjugate_pairs: &AdjacencyGraph,
+        is_strong_link: &HashMap<((usize, usize, usize), (usize, usize, usize)), bool>,
+        chain_length: usize
+    ) -> Vec<Vec<(usize, usize, usize)>> {
+        let mut chains = Vec::new();
+        let mut visited = HashSet::new();
+        XChainSolver::dfs(start_node, &mut Vec::new(), &mut chains, &mut visited, conjugate_pairs, is_strong_link, chain_length);
+        chains
+    }
+    
+    fn dfs(
+        current_node: (usize, usize, usize),
+        current_chain: &mut Vec<(usize, usize, usize)>,
+        chains: &mut Vec<Vec<(usize, usize, usize)>>,
+        visited: &mut HashSet<(usize, usize, usize)>,
+        graph: &AdjacencyGraph,
+        is_strong_link: &HashMap<((usize, usize, usize), (usize, usize, usize)), bool>,
+        chain_length: usize
+    ) {
+        if current_chain.len() == chain_length {
+            // Ensure the chain ends with a strong link
+            if let Some(&val) = is_strong_link.get(&(current_chain.last().unwrap().clone(), current_chain[current_chain.len() - 2])) {
+                if val {
+                    // Check if the chain contains at least one weak link
+                    let contains_weak_link = current_chain.windows(2).any(|nodes| {
+                        if let [start, end] = nodes {
+                            !*is_strong_link.get(&(start.clone(), end.clone())).unwrap_or(&true)
+                        } else {
+                            false
+                        }
+                    });
+        
+                    if contains_weak_link {
+                        chains.push(current_chain.clone());
+                    }
+                }
+            }
+            
+            return;
+        }
+    
+        visited.insert(current_node);
+        current_chain.push(current_node);
+    
+        if let Some(neighbors) = graph.neighbors(current_node) {
+            for &neighbor in neighbors {
+                if !visited.contains(&neighbor) {
+                    let link = is_strong_link.get(&(current_node, neighbor)).unwrap_or(&false);
+                    // We can always add a strong link
+                    if *link {
+                        XChainSolver::dfs(neighbor, current_chain, chains, visited, graph, is_strong_link, chain_length);
+                    } else {
+                        // Ensure the link before was strong
+                        if current_chain.len() >= 2 {
+                            if let Some(&val) = is_strong_link.get(&(current_chain.last().unwrap().clone(), current_chain[current_chain.len() - 2])) {
+                                if val {
+                                    XChainSolver::dfs(neighbor, current_chain, chains, visited, graph, is_strong_link, chain_length);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    
+        current_chain.pop();
+        visited.remove(&current_node);
+    }
+      
 }
