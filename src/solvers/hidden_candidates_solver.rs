@@ -6,25 +6,23 @@ use super::super::sudoku_grid::*;
 use std::collections::HashMap;
 use itertools::Itertools;
 
-pub struct HiddenCandidatesSolver;
+pub struct HiddenCandidatesSolver<const NUM_CANDIDATES: usize>;
 
 // Hidden candidates are like naked candidates except there can be extra
 // candidates inside its cells. If two numbers can only go in two cells 
 // it does not matter if other numbers exist as those two numbers MUST 
 // go in either of those cells
-impl SudokuSolveMethod for HiddenCandidatesSolver {
+impl<const NUM_CANDIDATES: usize> SudokuSolveMethod for HiddenCandidatesSolver<NUM_CANDIDATES> {
     fn apply(&self, sgrid: &SudokuGrid) -> Option<SolverResult> {
 
-        for combs in 2..=4 {
-            for unit_type in [UnitType::Box, UnitType::Row, UnitType::Col] {
-                if let Some(ret) = self.check_units(sgrid, combs, unit_type) { return Some(ret) };
-            }
+        for unit_type in [UnitType::Box, UnitType::Row, UnitType::Col] {
+            if let Some(ret) = self.check_units(sgrid, NUM_CANDIDATES, unit_type) { return Some(ret) };
         }
 
         None
     }
 }
-impl HiddenCandidatesSolver {
+impl<const NUM_CANDIDATES: usize> HiddenCandidatesSolver<NUM_CANDIDATES> {
     fn check_units(&self, sgrid: &SudokuGrid, combs: usize, unit_type: UnitType) -> Option<SolverResult> {
         for unit in SudokuGrid::get_all_units_from_unit_type(unit_type) {
             let unsolved_cells_in_unit: Vec<(usize, usize)> = unit.iter().filter(|&&(row, col)| sgrid.grid[row][col] == 0).cloned().collect();

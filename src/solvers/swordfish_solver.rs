@@ -6,20 +6,20 @@ use super::super::sudoku_grid::*;
 use std::collections::HashSet;
 use itertools::Itertools;
 
-pub struct SwordfishSolver;
+pub struct SwordfishSolver<const FISH_SIZE: usize>;
 
-impl SudokuSolveMethod for SwordfishSolver {
+impl<const FISH_SIZE: usize> SudokuSolveMethod for SwordfishSolver<FISH_SIZE> {
     fn apply(&self, sgrid: &SudokuGrid) -> Option<SolverResult> {
         for unit_type in [UnitType::Row, UnitType::Col] {
-            if let Some(ret) = SwordfishSolver::apply_fish_on_axis(sgrid, unit_type, 3) { return Some(ret) };
+            if let Some(ret) = SwordfishSolver::<FISH_SIZE>::apply_fish_on_axis(sgrid, unit_type) { return Some(ret) };
         }
         None
     }
 }
 
-impl SwordfishSolver {
-    pub fn apply_fish_on_axis(sgrid: &SudokuGrid, unit_type: UnitType, fish_size: usize) -> Option<SolverResult> {
-        assert!(fish_size == 3 || fish_size == 4, "Swordfish is fish_size=3 and Jellyfish if fish_size=4. No other types supported.");
+impl<const FISH_SIZE: usize> SwordfishSolver<FISH_SIZE> {
+    pub fn apply_fish_on_axis(sgrid: &SudokuGrid, unit_type: UnitType) -> Option<SolverResult> {
+        assert!(FISH_SIZE == 3 || FISH_SIZE == 4, "Swordfish is fish_size=3 and Jellyfish if fish_size=4. No other types supported.");
         for num in 1..=9 {
             let mut candidate_positions: [Vec<(usize, usize)>; 9] = Default::default();
     
@@ -37,11 +37,11 @@ impl SwordfishSolver {
     
             let possible_cells_for_fish: Vec<Vec<(usize, usize)>> = candidate_positions
                 .iter()
-                .filter(|&x| x.len() >= 2 && x.len() <= fish_size)
+                .filter(|&x| x.len() >= 2 && x.len() <= FISH_SIZE)
                 .cloned()
                 .collect();
     
-            for unit_set in possible_cells_for_fish.iter().clone().combinations(fish_size) {
+            for unit_set in possible_cells_for_fish.iter().clone().combinations(FISH_SIZE) {
                 let mut axis_counter = HashSet::new();
                 for &vec in &unit_set {
                     for &(row, col) in vec {
@@ -53,12 +53,12 @@ impl SwordfishSolver {
                     }
                 }
     
-                if axis_counter.len() != fish_size { continue; }
+                if axis_counter.len() != FISH_SIZE { continue; }
     
                 // We have a fish, check for candidate reductions.
                 let mut visualizer_updates = Vec::new();
                 let mut reductions = Vec::new();
-                visualizer_updates.push(VisualizerUpdate::SetTitle(match fish_size {
+                visualizer_updates.push(VisualizerUpdate::SetTitle(match FISH_SIZE {
                     3 => "Swordfish".to_string(),
                     4 => "Jellyfish".to_string(),
                     _ => panic!("Unsupported fish solver amount"),

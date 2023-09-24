@@ -8,7 +8,6 @@ pub mod x_wing_solver;
 pub mod singles_chains_solver;
 pub mod y_wing_solver;
 pub mod swordfish_solver;
-pub mod jellyfish_solver;
 pub mod medusa_3d_solver;
 pub mod bowmans_bingo_solver;
 pub mod xyz_wing_solver;

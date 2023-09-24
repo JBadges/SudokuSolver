@@ -6,24 +6,22 @@ use super::super::sudoku_grid::*;
 use std::collections::HashSet;
 use itertools::Itertools;
 
-pub struct NakedCandidatesSolver;
+pub struct NakedCandidatesSolver<const NUM_CANDIDATES: usize>;
 
 // A Naked Candidates Solver finds a group of n digits across any unit.
 // Once found, it can remove all instances of those candidates in every shared unit.
-impl SudokuSolveMethod for NakedCandidatesSolver {
+impl<const NUM_CANDIDATES: usize> SudokuSolveMethod for NakedCandidatesSolver<NUM_CANDIDATES> {
     fn apply(&self, sgrid: &SudokuGrid) -> Option<SolverResult> {
 
-        for combs in 2..=3 {
-            for unit_type in [UnitType::Box, UnitType::Row, UnitType::Col] {
-                if let Some(ret) = self.check_units(sgrid, combs, unit_type) { return Some(ret); };
-            }
+        for unit_type in [UnitType::Box, UnitType::Row, UnitType::Col] {
+            if let Some(ret) = self.check_units(sgrid, NUM_CANDIDATES, unit_type) { return Some(ret); };
         }
 
         None
     }
 }
 
-impl NakedCandidatesSolver {
+impl<const NUM_CANDIDATES: usize> NakedCandidatesSolver<NUM_CANDIDATES> {
     fn check_units(&self, sgrid: &SudokuGrid, combs: usize, unit_type: UnitType) -> Option<SolverResult> {       
         for all_cells in SudokuGrid::get_all_units_from_unit_type(unit_type) {
             let unsolved_cells: Vec<(usize, usize)> = all_cells.iter().filter(|&&(row, col)| sgrid.grid[row][col] == 0).cloned().collect();
