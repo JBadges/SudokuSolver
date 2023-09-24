@@ -26,6 +26,8 @@ impl Colors {
     // ];
     pub const CHAIN_RED: Color = Color::new(237, 188, 97, 255);
     pub const CHAIN_BLUE: Color = Color::new(110, 212, 210, 255);
+    pub const CHAIN_STRONG: Color = Color::new(200, 70, 70, 255);
+    pub const CHAIN_WEAK: Color = Color::new(65, 212, 120, 255);
 }
 
 #[derive(Clone)]

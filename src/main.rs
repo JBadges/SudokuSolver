@@ -2,6 +2,7 @@ use std::collections::HashSet;
 
 use raylib::prelude::*;
 use sudoku_generator::solvers::solver_manager::SudokuSolverManager;
+use sudoku_generator::solvers::x_chain_solver::XChainSolver;
 use sudoku_generator::sudoku_grid::*;
 use sudoku_generator::solvers::single_candidate_solver::SingleCandidateSolver;
 use sudoku_generator::solvers::naked_singles_solver::NakedSinglesSolver;
@@ -233,15 +234,16 @@ fn main() {
     // let simple_col_2 = SudokuGrid::from_string("123000587005817239987000164051008473390750618708100925076000891530081746810070352");
     // let simple_col_4 = SudokuGrid::from_string("036210840800045631014863009287030456693584000145672398408396000350028064060450083");
     // let swordfish = SudokuGrid::from_string("050030602642895317037020800023504700406000520571962483214000900760109234300240170");
-    let jellyfish = SudokuGrid::from_string("024090008800402900719000240075804300240900587038507604082000059007209003490050000");
+    // let jellyfish = SudokuGrid::from_string("024090008800402900719000240075804300240900587038507604082000059007209003490050000");
     // let medusa_twice_in_a_cell = SudokuGrid::from_string("093824560085600002206075008321769845000258300578040296850016723007082650002507180");
     // let medusa_twice_in_a_unit = SudokuGrid::from_string("300052000250300010004607523093200805570000030408035060005408300030506084840023056");
     // let medusa_two_colors_in_a_cell = SudokuGrid::from_string("290000830000020970000109402845761293600000547009045008903407000060030709050000384");
     // let medusa_two_colours_elsewhere = SudokuGrid::from_string("100056003043090000800043002030560210950421037021030000317980005000310970000670301");
     // let medusa_cell_emptied_by_color = SudokuGrid::from_string("986721345304956007007030960073065009690017003100390276000679030069143700731582694");
     // let xyz_wing = SudokuGrid::from_string("092001750500200008000030200075004960200060075069700030008090020700003089903800040");
-    // let temp = SudokuGrid::from_string("002090300805000000100000000090060040000000058000000001070000200300500000000100000");
-    let grid = jellyfish;
+    // let x_chain_1 = SudokuGrid::from_string("000351780857629341100874002509162804681040200000008160718000020000010008060080017");
+    let x_chain_2 = SudokuGrid::from_string("700054010063870425504000700270400001400920007000007542852043079390782054047590283");
+    let grid = x_chain_2;
 
     let mut solver: SudokuSolverManager = SudokuSolverManager::new(grid.clone());
     println!("Sudoku id: {}", grid.to_number_string());
@@ -256,6 +258,7 @@ fn main() {
     solver.add_solver(Box::new(HiddenCandidatesSolver::<4>));
     solver.add_solver(Box::new(IntersectionRemovalSolver));
     solver.add_solver(Box::new(XWingSolver));
+    solver.add_solver(Box::new(XChainSolver));
     solver.add_solver(Box::new(SinglesChainsSolver));
     solver.add_solver(Box::new(YWingSolver));
     solver.add_solver(Box::new(SwordfishSolver::<3>));
