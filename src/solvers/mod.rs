@@ -12,4 +12,5 @@ pub mod medusa_3d_solver;
 pub mod bowmans_bingo_solver;
 pub mod xyz_wing_solver;
 pub mod x_chain_solver;
+pub mod xy_chain_solver;
 pub mod solver_manager;

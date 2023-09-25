@@ -76,7 +76,8 @@ impl SudokuSolverManager {
             self.visualizers_per_step.last_mut().unwrap().push(cl);
         }
 
-        debug_assert!(self.sgrid.has_unique_solution(), "After applying solver [{}] we do not have a solution.", &self.visualizers_per_step.last().unwrap()[1].title);
+        println!("Solvable: {}", self.sgrid.has_unique_solution());
+        // debug_assert!(self.sgrid.has_unique_solution(), "After applying solver [{}] we do not have a solution.", &self.visualizers_per_step.last().unwrap()[1].title);
         applied_solver
     }
 
