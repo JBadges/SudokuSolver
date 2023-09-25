@@ -135,7 +135,18 @@ impl XChainSolver {
             // Ensure the chain ends with a strong link
             if let Some(&val) = is_strong_link.get(&(current_chain.last().unwrap().clone(), current_chain[current_chain.len() - 2])) {
                 if val {
-                    chains.push(current_chain.clone());
+                    // Check if the chain contains at least one weak link
+                    let contains_weak_link = current_chain.windows(2).any(|nodes| {
+                        if let [start, end] = nodes {
+                            !*is_strong_link.get(&(start.clone(), end.clone())).unwrap_or(&true)
+                        } else {
+                            false
+                        }
+                    });
+        
+                    if contains_weak_link {
+                        chains.push(current_chain.clone());
+                    }
                 }
             }
             
