@@ -3,6 +3,7 @@ use std::collections::HashSet;
 use raylib::prelude::*;
 use sudoku_generator::solvers::solver_manager::SudokuSolverManager;
 use sudoku_generator::solvers::x_chain_solver::XChainSolver;
+use sudoku_generator::solvers::xy_chain_solver::XYChainSolver;
 use sudoku_generator::sudoku_grid::*;
 use sudoku_generator::solvers::single_candidate_solver::SingleCandidateSolver;
 use sudoku_generator::solvers::naked_singles_solver::NakedSinglesSolver;
@@ -242,9 +243,14 @@ fn main() {
     // let medusa_cell_emptied_by_color = SudokuGrid::from_string("986721345304956007007030960073065009690017003100390276000679030069143700731582694");
     // let xyz_wing = SudokuGrid::from_string("092001750500200008000030200075004960200060075069700030008090020700003089903800040");
     // let x_chain_1 = SudokuGrid::from_string("000351780857629341100874002509162804681040200000008160718000020000010008060080017");
-    let x_chain_2 = SudokuGrid::from_string("700054010063870425504000700270400001400920007000007542852043079390782054047590283");
-    let grid = x_chain_2;
-
+    // let x_chain_2 = SudokuGrid::from_string("700054010063870425504000700270400001400920007000007542852043079390782054047590283");
+    // let xy_chain1 = SudokuGrid::from_string("506094003000086925892513647738629050154378296629451738987145362000960000000830009");
+    // let xy_chain2 = SudokuGrid::from_string("361749528584000790792000004923574080416000357857631249678000412145287900239416875");
+    // let xy_chain3 = SudokuGrid::from_string("570401690948276153600000740009000304400093506305000901254367819000000265196528437");
+    let diabolical = SudokuGrid::from_string("000704005020010070000080002090006250600070008053200010400090000030060090200407000");
+    
+    let grid = diabolical;
+    
     let mut solver: SudokuSolverManager = SudokuSolverManager::new(grid.clone());
     println!("Sudoku id: {}", grid.to_number_string());
 
@@ -258,9 +264,10 @@ fn main() {
     solver.add_solver(Box::new(HiddenCandidatesSolver::<4>));
     solver.add_solver(Box::new(IntersectionRemovalSolver));
     solver.add_solver(Box::new(XWingSolver));
+    solver.add_solver(Box::new(YWingSolver));
     solver.add_solver(Box::new(XChainSolver));
     solver.add_solver(Box::new(SinglesChainsSolver));
-    solver.add_solver(Box::new(YWingSolver));
+    solver.add_solver(Box::new(XYChainSolver));
     solver.add_solver(Box::new(SwordfishSolver::<3>));
     solver.add_solver(Box::new(XYZWingSolver));
     solver.add_solver(Box::new(SwordfishSolver::<4>));

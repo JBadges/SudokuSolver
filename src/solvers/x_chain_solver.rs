@@ -13,7 +13,7 @@ impl SudokuSolveMethod for XChainSolver {
     fn apply(&self, sgrid: &SudokuGrid) -> Option<SolverResult> {
         for chain_length in (3..=9).step_by(2) {
             for num in 1..=9 {
-                let mut conjugate_pairs: crate::adjacency_graph::AdjacencyGraph = sgrid.get_conjugate_pairs(num);
+                let mut conjugate_pairs= sgrid.get_conjugate_pairs(num);
                 let mut is_strong_link: HashMap<((usize, usize, usize), (usize, usize, usize)), bool> = conjugate_pairs.edges.iter()
                     .flat_map(|(&key, ends)| ends
                         .iter()
@@ -165,7 +165,7 @@ impl XChainSolver {
                         XChainSolver::dfs(neighbor, current_chain, chains, visited, graph, is_strong_link, chain_length);
                     } else {
                         // Ensure the link before was strong
-                        if current_chain.len() >= 2 {
+                        if current_chain.len() >= 2 && current_chain.len() % 2 == 0 {
                             if let Some(&val) = is_strong_link.get(&(current_chain.last().unwrap().clone(), current_chain[current_chain.len() - 2])) {
                                 if val {
                                     XChainSolver::dfs(neighbor, current_chain, chains, visited, graph, is_strong_link, chain_length);

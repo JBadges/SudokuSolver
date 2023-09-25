@@ -537,4 +537,15 @@ impl SudokuGrid {
         (row / 3) * 3 + (col / 3) + 1
     }
 
+    pub fn cell_to_str(cell: (usize, usize)) -> String {
+        let (row, col) = cell;
+        let row_char = (b'A' + row as u8) as char;
+        format!("{},{}", row_char, col + 1)
+    }
+    
+    pub fn cell_candidate_to_str(cell: (usize, usize, usize)) -> String {
+        let (row, col, candidate) = cell;
+        format!("{},{}", SudokuGrid::cell_to_str((row, col)), candidate)
+    }
+
 }
