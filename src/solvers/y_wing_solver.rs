@@ -113,7 +113,20 @@ impl SudokuSolveMethod for YWingSolver {
                         visualizer_updates.push(VisualizerUpdate::ColorCandidate(row, col, c, Colors::CANDIDATE_MARKED_FOR_REMOVAL));
                     }
                 }
-                if !reductions.is_empty() { return Some((reductions, visualizer_updates)); }
+                if !reductions.is_empty() { 
+                    visualizer_updates.push(
+                        VisualizerUpdate::SetDescription(
+                            format!(
+                                "Using a hinge with candidates [{0}], connected to two wings with candidates [{1}] and [{2}]. For all cells that both wings can see, the candidate shared between the wings, {3}, can be eliminated.",
+                                hinge_candidates.iter().map(|&v| v.to_string()).sorted().collect::<Vec<_>>().join(", "),
+                                wing1_candidates.iter().map(|&v| v.to_string()).sorted().collect::<Vec<_>>().join(", "),
+                                wing2_candidates.iter().map(|&v| v.to_string()).sorted().collect::<Vec<_>>().join(", "),
+                                c
+                            )
+                        )
+                    );                     
+                    return Some((reductions, visualizer_updates)); 
+                }
             }
         }
 

@@ -48,6 +48,17 @@ impl IntersectionRemovalSolver {
                 let mut visualizer_updates = Vec::default();
 
                 visualizer_updates.push(VisualizerUpdate::SetTitle("Intersection Removal:Pointing Pair".to_string()));
+                visualizer_updates.push(VisualizerUpdate::SetDescription(
+                    format!(
+                        "The only placement for the digit {0} within the marked box lies in a {1}. Therefore this {1} must contain this digit within this box. All other cells in the same {1} can be reduced.",
+                        num,
+                        match pointing_check_unit {
+                            UnitType::Row => "row",
+                            UnitType::Col => "column",
+                            UnitType::Box => panic!("Box type makes no sense"),
+                        }
+                    )
+                ));
 
                 for &(row, col) in unit {
                     visualizer_updates.push(VisualizerUpdate::ColorCell(row, col, Colors::CELL_USED_TO_DETERMINE_SOLUTION));
@@ -102,6 +113,17 @@ impl IntersectionRemovalSolver {
                 let mut visualizer_updates = Vec::default();
 
                 visualizer_updates.push(VisualizerUpdate::SetTitle("Intersection Removal:Box Line".to_string()));
+                visualizer_updates.push(VisualizerUpdate::SetDescription(
+                    format!(
+                        "The only placement for the digit {0} within the marked {1} lies in a box. Therefore this box must contain this digit within this {1}. All other cells that are in the same box can be reduced.",
+                        num,
+                        match pointing_check_unit {
+                            UnitType::Row => "row",
+                            UnitType::Col => "column",
+                            UnitType::Box => panic!("Box type makes no sense"),
+                        }
+                    )
+                ));
 
                 for &(row, col) in unit {
                     visualizer_updates.push(VisualizerUpdate::ColorCell(row, col, Colors::CELL_USED_TO_DETERMINE_SOLUTION));

@@ -100,7 +100,27 @@ impl XWingSolver {
                         }
                     }
                 }
-                if !reductions.is_empty() { return Some((reductions, visualizer_updates)); }
+                if !reductions.is_empty() { 
+                    visualizer_updates.push(
+                        VisualizerUpdate::SetDescription(
+                            format!(
+                                "For digit {0}, there are only two possible positions across two {1}s. Since these cells also align in the {2}, the digit {0} can be elimated from candidates that share a {2} with either cell.",
+                                num,
+                                match unit_type {
+                                    UnitType::Row => "row",
+                                    UnitType::Col => "column",
+                                    UnitType::Box => panic!("Box type makes no sense"),
+                                },
+                                match unit_type {
+                                    UnitType::Col => "row",
+                                    UnitType::Row => "column",
+                                    UnitType::Box => panic!("Box type makes no sense"),
+                                }
+                            )
+                        )
+                    );                    
+                    return Some((reductions, visualizer_updates)); 
+                }
             }
         }
         None

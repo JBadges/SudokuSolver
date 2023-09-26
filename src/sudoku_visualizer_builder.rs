@@ -42,6 +42,7 @@ pub struct SudokuVisualizerBuilder {
 
     pub chains: HashMap<Chain, Color>,
     pub title: String, 
+    pub description: String, 
 }
 
 impl SudokuVisualizerBuilder {
@@ -55,6 +56,7 @@ impl SudokuVisualizerBuilder {
             cell_highlights: HashMap::new(),
             chains: HashMap::new(),
             title: "Solver".to_string(),
+            description: "-".to_string(),
         }
     }
 
@@ -78,6 +80,11 @@ impl SudokuVisualizerBuilder {
         self.title = title.to_string();
     }
 
+    pub fn set_description(&mut self, description: &str) {
+        self.description = description.to_string();
+    }
+
+    
     pub fn color_digit(&mut self, row: usize, col: usize, num: usize, color: Color) {
         self.digits.insert((row, col), (num, color));
     }

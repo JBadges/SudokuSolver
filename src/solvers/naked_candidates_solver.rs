@@ -42,12 +42,25 @@ impl<const NUM_CANDIDATES: usize> NakedCandidatesSolver<NUM_CANDIDATES> {
                     })
                 ));
 
+                let mut digits: HashSet<usize> = Default::default();
                 for &(row, col) in &n_cell_combination {
                     for &candidate in &sgrid.candidates[row][col] {
                         visualizer_updates.push(VisualizerUpdate::ColorCandidate(row, col, candidate, Colors::DIGIT_USED_TO_DETERMINE_SOLUTION));
                     }
                     visualizer_updates.push(VisualizerUpdate::ColorCell(row, col, Colors::CELL_USED_TO_DETERMINE_SOLUTION));
+                    for &num in &sgrid.candidates[row][col] { digits.insert(num); }
                 }
+
+                visualizer_updates.push(
+                    VisualizerUpdate::SetDescription(
+                        format!(
+                            "{1} cells contain only the digits [{0}], forming a Naked Candidate. Any other cells in the same unit with the {1} cells that contain candidates [{0}] can have them eliminated.", 
+                            digits.iter().map(|&v| v.to_string()).sorted().collect::<Vec<_>>().join(", "),
+                            combs
+                        )
+                    )
+                );
+
 
                 for unit in SudokuGrid::get_contained_units(&n_cell_combination) {
                     for (row, col) in SudokuGrid::get_cells_in_unit_from(unit, n_cell_combination[0]) {

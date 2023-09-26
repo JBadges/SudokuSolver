@@ -3,7 +3,7 @@ use crate::sudoku_visualizer_builder::Colors;
 use super::sudoku_solver::*;
 use super::super::sudoku_grid::*;
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use itertools::Itertools;
 
 pub struct HiddenCandidatesSolver<const NUM_CANDIDATES: usize>;
@@ -66,6 +66,21 @@ impl<const NUM_CANDIDATES: usize> HiddenCandidatesSolver<NUM_CANDIDATES> {
                     _ => "Unkown",
                     })
                 ));
+
+                visualizer_updates.push(
+                    VisualizerUpdate::SetDescription(
+                        format!(
+                            "{1} cells within the same {2} contain the only occurances of the digits [{0}], forming a Hidden Candidate, the rest of the candidates of these cells can be removed.", 
+                            candidates_combination.iter().map(|&v| v.to_string()).sorted().collect::<Vec<_>>().join(", "),
+                            combs,
+                            match unit_type {
+                                UnitType::Box => "box",
+                                UnitType::Row => "row",
+                                UnitType::Col => "column",
+                            },
+                        )
+                    )
+                );
 
                 for &(row, col) in &unit {
                     visualizer_updates.push(VisualizerUpdate::ColorCell(row, col, Colors::CELL_USED_TO_DETERMINE_SOLUTION));

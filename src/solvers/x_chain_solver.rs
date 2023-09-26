@@ -1,6 +1,6 @@
 use std::collections::{HashMap, HashSet};
 
-use crate::{sudoku_grid::SudokuGrid, sudoku_visualizer_builder::Colors, adjacency_graph::AdjacencyGraph};
+use crate::{sudoku_grid::SudokuGrid, sudoku_visualizer_builder::Colors, adjacency_graph::AdjacencyGraph, solvers::sudoku_solver::VisualizerUpdate};
 
 use super::sudoku_solver::{SolverAction::*, SolverResult, SudokuSolveMethod, VisualizerUpdate::*};
 
@@ -39,10 +39,10 @@ impl SudokuSolveMethod for XChainSolver {
                 for start_node in is_strong_link.iter().filter(|&(_, &value)| value).flat_map(|(&key, _)| vec![key.0, key.1]) {
                     let chains = XChainSolver::find_chains_from_node(start_node, &conjugate_pairs, &is_strong_link, chain_length + 1);
                     for chain in chains {
-                        let mut viualizer_updates = Vec::new();
+                        let mut visualizer_updates = Vec::new();
                         let mut reductions = Vec::new();
                         debug_assert!(chain_length == chain.len() - 1, "Chain found and chain length aren't the same.");
-                        viualizer_updates.push(SetTitle(format!("X-Chain length {}", chain.len() - 1)));
+                        visualizer_updates.push(SetTitle(format!("X-Chain length {}", chain.len() - 1)));
                         let first = chain.first().unwrap();
                         let last = chain.last().unwrap();
                         let cells_to_check: Vec<(usize, usize)> =
@@ -56,14 +56,14 @@ impl SudokuSolveMethod for XChainSolver {
                             if chain.contains(&(row, col, num)) {
                                 continue;
                             }
-                            viualizer_updates.push(ColorCell(
+                            visualizer_updates.push(ColorCell(
                                 row,
                                 col,
                                 Colors::CELL_MARKED_FOR_CANDIDATE_REMOVEAL,
                             ));
                             if sgrid.candidates[row][col].contains(&num) {
                                 reductions.push(CandidateReduction(row, col, num));
-                                viualizer_updates.push(ColorCandidate(
+                                visualizer_updates.push(ColorCandidate(
                                     row,
                                     col,
                                     num,
@@ -77,7 +77,7 @@ impl SudokuSolveMethod for XChainSolver {
                                 true => Colors::CHAIN_BLUE,
                                 false => Colors::CHAIN_RED,
                             };
-                            viualizer_updates.push(BackgroundCandidate(
+                            visualizer_updates.push(BackgroundCandidate(
                                 chain[i].0,
                                 chain[i].1,
                                 num,
@@ -89,7 +89,7 @@ impl SudokuSolveMethod for XChainSolver {
                                     Some(false) => Colors::CHAIN_WEAK,
                                     _ => panic!("This shouldn't be possible.")
                                 };
-                                viualizer_updates.push(CreateChain(
+                                visualizer_updates.push(CreateChain(
                                     chain[i].0,
                                     chain[i].1,
                                     num,
@@ -101,7 +101,17 @@ impl SudokuSolveMethod for XChainSolver {
                             }
                         }
 
-                        if !reductions.is_empty() { return Some((reductions, viualizer_updates)); }
+                        if !reductions.is_empty() {
+                            visualizer_updates.push(
+                                VisualizerUpdate::SetDescription(
+                                    format!(
+                                        "Green (weak) and Red (strong) chains connect logic between candidates. If the chain is correct and Blue is OFF, then the ending Orange is ON, setting the digit to {0}. This prevents cells marked in BLUE from containing {0}. Conversely, if the starting Blue was incorrectly OFF and is actually ON, those same cells still can't contain {0}. The cells that are eliminated are those that both ends of the chain can see, ensuring they can't be {0}.",
+                                        num
+                                    )
+                                )
+                            );  
+                            return Some((reductions, visualizer_updates)); 
+                        }
                     }
                 }
             }

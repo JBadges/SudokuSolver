@@ -72,10 +72,23 @@ impl SudokuSolveMethod for SinglesChainsSolver {
                         }
                     }
                 };
+
                 process_same_color_in_unit(&red_nodes);
                 process_same_color_in_unit(&blue_nodes);
 
-                // Cell sees both colors
+                if !reductions.is_empty() { 
+                    visualizer_updates.push(
+                        VisualizerUpdate::SetDescription(
+                            format!(
+                                "A singles chain is a graph of Strong links between conjugate pairs of the same digit, in this case {0}. The graph can be colored with two colors where one of the colors MUST be the solution. Two of the same color can see each other which means that it is impossible for that color to be the solution and can be eliminated.",
+                                num
+                            )
+                        )
+                    );  
+                    return Some((reductions, visualizer_updates)); 
+                }
+
+                // Two of the same color can see each other
                 for (row, col) in iproduct!(0..9, 0..9).collect::<Vec<(usize, usize)>>() {
                     let sees_red = red_nodes.iter().any(|&red_cell| SudokuGrid::cells_see_each_other((row, col), (red_cell.0, red_cell.1)) && (red_cell.0, red_cell.1) != (row, col));
                     let sees_blue = blue_nodes.iter().any(|&blue_cell| SudokuGrid::cells_see_each_other((row, col), (blue_cell.0, blue_cell.1)) && (blue_cell.0, blue_cell.1) != (row, col));
@@ -86,8 +99,17 @@ impl SudokuSolveMethod for SinglesChainsSolver {
                     }
             
                 }
-
-                if !reductions.is_empty() { return Some((reductions, visualizer_updates)); }
+                if !reductions.is_empty() { 
+                    visualizer_updates.push(
+                        VisualizerUpdate::SetDescription(
+                            format!(
+                                "A singles chain is a graph of Strong links between conjugate pairs of the same digit, in this case {0}. The graph can be colored with two colors where one of the colors MUST be the solution. Since one of the colors must be the solution, if any cell can see two opposite colors, the digit can be eliminated from that cell.",
+                                num
+                            )
+                        )
+                    ); 
+                    return Some((reductions, visualizer_updates)); 
+                }
             }
         }
 

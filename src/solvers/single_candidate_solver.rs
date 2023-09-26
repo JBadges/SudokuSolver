@@ -26,7 +26,12 @@ impl SudokuSolveMethod for SingleCandidateSolver {
                 }
             }
         }
-
-        return if reductions.is_empty() { None } else { Some((reductions, visualizer_updates)) };
+        
+        if !reductions.is_empty() { 
+            visualizer_updates.push(VisualizerUpdate::SetDescription("These cells have only one valid candidate, making it the definitive number for that cell.".to_string())); 
+            return Some((reductions, visualizer_updates))
+        }
+        
+        None
     }
 }

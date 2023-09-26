@@ -9,6 +9,7 @@ pub enum SolverAction {
 
 pub enum VisualizerUpdate {
     SetTitle(String),
+    SetDescription(String),
     ColorDigit(usize, usize, Color),
     ColorCell(usize, usize, Color),
     ColorCandidate(usize, usize, usize, Color),

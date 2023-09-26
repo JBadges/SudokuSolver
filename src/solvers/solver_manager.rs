@@ -20,6 +20,12 @@ impl SudokuSolverManager {
         }
     }
 
+    pub fn new_grid(&mut self, sgrid: SudokuGrid) {
+        self.sgrid = sgrid;
+        self.current_step = 0;
+        self.visualizers_per_step = Default::default();
+    }
+
     pub fn add_solver(&mut self, solver: Box<dyn SudokuSolveMethod>) {
         self.solvers.push(solver);
     }
@@ -61,6 +67,7 @@ impl SudokuSolverManager {
                     VisualizerUpdate::ColorCandidate(row, col, num, color) => visualizer.color_candidate(row, col, num, color),
                     VisualizerUpdate::BackgroundCandidate(row, col, num, color) => visualizer.highlight_candidate(row, col, num, color),
                     VisualizerUpdate::CreateChain(row_from, col_from, num_from, row_to, col_to, num_to, color) => visualizer.add_chain(row_from, col_from, num_from, row_to, col_to, num_to, color),
+                    VisualizerUpdate::SetDescription(ref description) => visualizer.set_description(description),
                 }
             }
             applied_solver = true;

@@ -3,16 +3,16 @@ use crate::sudoku_visualizer_builder::Colors;
 use super::sudoku_solver::*;
 use super::super::sudoku_grid::*;
 
-pub struct NakedSinglesSolver;
+pub struct HiddenSinglesSolver;
 
 // A Naked Singles Solver finds any unit (row, col, box) in which
 // there exists a digit that can only be placed in one of the cells
-impl SudokuSolveMethod for NakedSinglesSolver {
+impl SudokuSolveMethod for HiddenSinglesSolver {
     fn apply(&self, sgrid: &SudokuGrid) -> Option<SolverResult> {
 
         for unit_type in [UnitType::Box, UnitType::Row, UnitType::Col] {
             for unit in SudokuGrid::get_all_units_from_unit_type(unit_type) {
-                if let Some(result) = self.find_hidden_single(sgrid, &unit) { return Some(result); }
+                if let Some(result) = self.find_hidden_single(sgrid, &unit, unit_type) { return Some(result); }
             }
         }
 
@@ -20,8 +20,8 @@ impl SudokuSolveMethod for NakedSinglesSolver {
     }
 }
 
-impl NakedSinglesSolver {
-    fn find_hidden_single(&self, sgrid: &SudokuGrid, vals: &Vec<(usize, usize)>) -> Option<SolverResult> {
+impl HiddenSinglesSolver {
+    fn find_hidden_single(&self, sgrid: &SudokuGrid, vals: &Vec<(usize, usize)>, unit_type: UnitType) -> Option<SolverResult> {
         let mut visualizer_updates = Vec::new();
         let mut reductions = Vec::new();
 
@@ -45,6 +45,17 @@ impl NakedSinglesSolver {
                 if sgrid.grid[row][col] != 0 { continue; }
                 visualizer_updates.push(VisualizerUpdate::ColorDigit(row, col, Colors::SOLVED_DIGIT));
                 reductions.push(SolverAction::DigitSolve(row, col, num));
+                visualizer_updates.push(VisualizerUpdate::SetDescription(
+                    format!(
+                        "In the marked {}, there is only 1 valid placement for the digit {}.",
+                        match unit_type {
+                            UnitType::Box => "box",
+                            UnitType::Row => "row",
+                            UnitType::Col => "column",
+                        },
+                        num
+                    )
+                ));
                 return Some((reductions, visualizer_updates));
             }
         }
